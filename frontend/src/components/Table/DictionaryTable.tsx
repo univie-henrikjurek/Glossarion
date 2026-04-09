@@ -107,18 +107,41 @@ export default function DictionaryTable() {
           },
           {
             id: `lang_${lang}`,
-            header: () => (
-              <div 
-                className="flex items-center gap-2 cursor-pointer select-none hover:text-primary-400" 
-                onClick={() => setSorting([{ id: `lang_${lang}`, desc: false }])}
-              >
-                <span className="font-bold">{lang.toUpperCase()}</span>
-                <span className="text-xs text-slate-500">{LANGUAGE_NAMES[lang]?.slice(0, 3)}</span>
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                </svg>
-              </div>
-            ),
+            header: ({ table }) => {
+              const sorted = table.getState().sorting.find(s => s.id === `lang_${lang}`);
+              const isSorted = !!sorted;
+              const isDesc = sorted?.desc;
+              return (
+                <div 
+                  className="flex items-center gap-2 cursor-pointer select-none hover:text-primary-400" 
+                  onClick={() => {
+                    if (isSorted && !isDesc) {
+                      setSorting([{ id: `lang_${lang}`, desc: true }]);
+                    } else {
+                      setSorting([{ id: `lang_${lang}`, desc: false }]);
+                    }
+                  }}
+                >
+                  <span className="font-bold">{lang.toUpperCase()}</span>
+                  <span className="text-xs text-slate-500">{LANGUAGE_NAMES[lang]?.slice(0, 3)}</span>
+                  {isSorted ? (
+                    isDesc ? (
+                      <svg className="w-3 h-3 text-primary-400" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M7 14l5 5 5-5z"/>
+                      </svg>
+                    ) : (
+                      <svg className="w-3 h-3 text-primary-400" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M7 10l5-5 5 5z"/>
+                      </svg>
+                    )
+                  ) : (
+                    <svg className="w-3 h-3 opacity-30" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M7 10l5-5 5 5z"/>
+                    </svg>
+                  )}
+                </div>
+              );
+            },
             cell: ({ row }) => {
               const translation = row.original.translations.find((t: Translation) => t.language_code === lang);
               return (

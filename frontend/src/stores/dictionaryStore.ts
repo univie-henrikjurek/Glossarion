@@ -133,7 +133,10 @@ export const useDictionaryStore = create<DictionaryState>((set, get) => ({
   autoTranslate: async (entryId: string): Promise<void> => {
     try {
       await apiService.autoTranslate(entryId);
-      await get().fetchEntries();
+      const updated = await apiService.getEntry(entryId);
+      const entries = get().entries.map(e => e.id === entryId ? updated : e);
+      await syncService.updateLocalEntry(updated);
+      set({ entries });
     } catch {
       set({ error: 'Translation service unavailable' });
     }
