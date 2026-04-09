@@ -28,7 +28,7 @@ services:
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql+asyncpg://glossarion:glossarion_dev_2024@db:5432/glossarion
-      LIBRETRANSLATE_URL: http://libretranslate:3000
+      LIBRETRANSLATE_URL: http://libretranslate:5000
       CORS_ORIGINS: "*"
       SOURCE_LANGUAGE: en
       TARGET_LANGUAGES: de,fr,es

@@ -4,10 +4,13 @@ import {
   getCoreRowModel,
   flexRender,
   createColumnHelper,
+  getSortedRowModel,
+  type SortingState,
 } from '@tanstack/react-table';
 import type { Entry, Translation } from '../../types';
 import { useDictionaryStore } from '../../stores/dictionaryStore';
 import { useAppStore } from '../../stores/appStore';
+import { LANGUAGE_NAMES } from '../../utils/languageUtils';
 import TableCell from './TableCell';
 
 const columnHelper = createColumnHelper<Entry>();
@@ -16,6 +19,9 @@ export default function DictionaryTable() {
   const { entries, sourceLanguage, targetLanguages, deleteEntry, autoTranslate } = useDictionaryStore();
   const { setShowEntryModal } = useAppStore();
   const [translatingId, setTranslatingId] = useState<string | null>(null);
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [visibleLanguages, setVisibleLanguages] = useState<Set<string>>(new Set());
+  const [showSettings, setShowSettings] = useState(false);
 
   const allLanguages = useMemo(() => {
     const langs = new Set<string>();
@@ -36,11 +42,22 @@ export default function DictionaryTable() {
     }
   };
 
+  const toggleLanguage = (lang: string) => {
+    const newVisible = new Set(visibleLanguages);
+    if (newVisible.has(lang)) {
+      newVisible.delete(lang);
+    } else {
+      newVisible.add(lang);
+    }
+    setVisibleLanguages(newVisible);
+  };
+
   const columns = useMemo(() => {
     const cols = [
       columnHelper.display({
         id: 'actions',
         header: '',
+        size: 80,
         cell: ({ row }) => (
           <div className="flex items-center gap-2">
             <button
@@ -75,38 +92,49 @@ export default function DictionaryTable() {
     ];
 
     allLanguages.forEach((lang: string) => {
-      cols.push(
-        columnHelper.accessor(
-          (row) => {
-            const t = row.translations.find((tr: Translation) => tr.language_code === lang);
-            return t ? t.text : '';
-          },
-          {
-            id: `lang_${lang}`,
-            header: lang.toUpperCase(),
-            cell: ({ row }) => {
-              const translation = row.original.translations.find((t: Translation) => t.language_code === lang);
-              return (
-                <TableCell
-                  entryId={row.original.id}
-                  translation={translation}
-                  languageCode={lang}
-                  isSource={lang === sourceLanguage}
-                />
-              );
+      const isVisible = visibleLanguages.size === 0 || visibleLanguages.has(lang);
+      if (isVisible) {
+        cols.push(
+          columnHelper.accessor(
+            (row) => {
+              const t = row.translations.find((tr: Translation) => tr.language_code === lang);
+              return t ? t.text : '';
             },
-          }
-        )
-      );
+            {
+              id: `lang_${lang}`,
+              header: () => (
+                <div className="flex items-center gap-1 cursor-pointer select-none" onClick={() => setSorting([{ id: `lang_${lang}`, desc: false }])}>
+                  <span>{lang.toUpperCase()}</span>
+                  <span className="text-xs text-slate-500">{LANGUAGE_NAMES[lang]?.slice(0, 3)}</span>
+                </div>
+              ),
+              cell: ({ row }) => {
+                const translation = row.original.translations.find((t: Translation) => t.language_code === lang);
+                return (
+                  <TableCell
+                    entryId={row.original.id}
+                    translation={translation}
+                    languageCode={lang}
+                    isSource={lang === sourceLanguage}
+                  />
+                );
+              },
+            }
+          )
+        );
+      }
     });
 
     return cols;
-  }, [allLanguages, sourceLanguage, translatingId, deleteEntry, autoTranslate]);
+  }, [allLanguages, sourceLanguage, translatingId, deleteEntry, autoTranslate, visibleLanguages, sourceLanguage]);
 
   const table = useReactTable({
     data: entries,
     columns,
+    state: { sorting },
+    onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
   });
 
   if (entries.length === 0) {
@@ -128,34 +156,60 @@ export default function DictionaryTable() {
   }
 
   return (
-    <div className="overflow-x-auto border border-slate-700 rounded-lg">
-      <table className="w-full">
-        <thead className="bg-slate-800">
-          {table.getHeaderGroups().map(headerGroup => (
-            <tr key={headerGroup.id}>
-              {headerGroup.headers.map(header => (
-                <th
-                  key={header.id}
-                  className="px-4 py-3 text-left text-sm font-semibold text-slate-300 border-b border-slate-700"
-                >
-                  {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                </th>
-              ))}
-            </tr>
-          ))}
-        </thead>
-        <tbody className="divide-y divide-slate-700">
-          {table.getRowModel().rows.map(row => (
-            <tr key={row.id} className="hover:bg-slate-800/50">
-              {row.getVisibleCells().map(cell => (
-                <td key={cell.id} className="px-4 py-3 border-r border-slate-700 last:border-r-0">
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div>
+      <div className="mb-4 flex items-center gap-4">
+        <button
+          onClick={() => setShowSettings(!showSettings)}
+          className="px-3 py-1 text-sm bg-slate-700 hover:bg-slate-600 rounded-lg"
+        >
+          {showSettings ? 'Hide' : 'Show'} Columns
+        </button>
+        {showSettings && (
+          <div className="flex flex-wrap gap-2">
+            {allLanguages.map((lang: string) => (
+              <label key={lang} className="flex items-center gap-1 text-sm">
+                <input
+                  type="checkbox"
+                  checked={visibleLanguages.size === 0 || visibleLanguages.has(lang)}
+                  onChange={() => toggleLanguage(lang)}
+                  className="rounded"
+                />
+                <span>{lang.toUpperCase()}</span>
+              </label>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="overflow-x-auto border border-slate-700 rounded-lg">
+        <table className="w-full">
+          <thead className="bg-slate-800">
+            {table.getHeaderGroups().map(headerGroup => (
+              <tr key={headerGroup.id}>
+                {headerGroup.headers.map(header => (
+                  <th
+                    key={header.id}
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-300 border-b border-slate-700"
+                  >
+                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                  </th>
+                ))}
+              </tr>
+            ))}
+          </thead>
+          <tbody className="divide-y divide-slate-700">
+            {table.getRowModel().rows.map(row => (
+              <tr key={row.id} className="hover:bg-slate-800/50">
+                {row.getVisibleCells().map(cell => (
+                  <td key={cell.id} className="px-4 py-3 border-r border-slate-700 last:border-r-0">
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
