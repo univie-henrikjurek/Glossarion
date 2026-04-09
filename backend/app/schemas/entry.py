@@ -9,7 +9,7 @@ class EntryBase(BaseModel):
 
 
 class EntryCreate(EntryBase):
-    pass
+    source_language: Optional[str] = None
 
 
 class EntryUpdate(BaseModel):

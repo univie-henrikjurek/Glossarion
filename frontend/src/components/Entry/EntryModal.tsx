@@ -1,12 +1,16 @@
 import { useState } from 'react';
 import { useDictionaryStore } from '../../stores/dictionaryStore';
 import { useAppStore } from '../../stores/appStore';
+import { LANGUAGE_NAMES } from '../../utils/languageUtils';
+
+const AVAILABLE_LANGUAGES = ['en', 'de', 'fr', 'es', 'it', 'pt', 'nl', 'pl', 'ru', 'zh', 'ja'];
 
 export default function EntryModal() {
-  const { addEntry } = useDictionaryStore();
+  const { addEntry, sourceLanguage } = useDictionaryStore();
   const { showEntryModal, setShowEntryModal } = useAppStore();
   const [context, setContext] = useState('');
   const [tags, setTags] = useState('');
+  const [selectedLanguage, setSelectedLanguage] = useState(sourceLanguage);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -15,7 +19,7 @@ export default function EntryModal() {
 
     setIsSubmitting(true);
     const tagList = tags.split(',').map((t: string) => t.trim()).filter(Boolean);
-    await addEntry(context.trim(), tagList);
+    await addEntry(context.trim(), tagList, selectedLanguage);
     setContext('');
     setTags('');
     setShowEntryModal(false);
@@ -42,7 +46,24 @@ export default function EntryModal() {
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-1">
-              Text (English)
+              Source Language
+            </label>
+            <select
+              value={selectedLanguage}
+              onChange={(e) => setSelectedLanguage(e.target.value)}
+              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              {AVAILABLE_LANGUAGES.map(lang => (
+                <option key={lang} value={lang}>
+                  {LANGUAGE_NAMES[lang] || lang.toUpperCase()} ({lang})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-1">
+              Text ({selectedLanguage.toUpperCase()})
             </label>
             <textarea
               value={context}

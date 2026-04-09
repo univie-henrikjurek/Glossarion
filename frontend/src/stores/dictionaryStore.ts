@@ -14,7 +14,7 @@ interface DictionaryState {
   error: string | null;
   
   fetchEntries: () => Promise<void>;
-  addEntry: (context?: string, tags?: string[]) => Promise<Entry | null>;
+  addEntry: (context?: string, tags?: string[], sourceLanguage?: string) => Promise<Entry | null>;
   updateEntry: (id: string, data: { context?: string; tags?: string[] }) => Promise<void>;
   deleteEntry: (id: string) => Promise<void>;
   addTranslation: (entryId: string, languageCode: string, text: string, status?: string) => Promise<void>;
@@ -52,15 +52,15 @@ export const useDictionaryStore = create<DictionaryState>((set, get) => ({
     }
   },
 
-  addEntry: async (context?: string, tags: string[] = []) => {
+  addEntry: async (context?: string, tags: string[] = [], sourceLanguage?: string) => {
     try {
-      const entry = await apiService.createEntry({ context, tags });
+      const entry = await apiService.createEntry({ context, tags, source_language: sourceLanguage });
       const entries = [...get().entries, entry];
       await syncService.updateLocalEntry(entry);
       set({ entries });
       return entry;
     } catch {
-      await syncService.addToSyncQueue('create', { context, tags });
+      await syncService.addToSyncQueue('create', { context, tags, source_language: sourceLanguage });
       set({ error: 'Saved offline - will sync when online' });
       return null;
     }

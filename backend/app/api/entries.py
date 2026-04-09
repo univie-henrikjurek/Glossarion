@@ -43,11 +43,24 @@ async def create_entry(
     entry_data: EntryCreate,
     db: AsyncSession = Depends(get_db)
 ):
+    source_lang = entry_data.source_language or settings.source_language
+    
     entry = Entry(
         context=entry_data.context,
         tags=entry_data.tags
     )
     db.add(entry)
+    await db.flush()
+    
+    if entry_data.context:
+        translation = Translation(
+            entry_id=entry.id,
+            language_code=source_lang,
+            text=entry_data.context,
+            status="verified"
+        )
+        db.add(translation)
+    
     await db.commit()
     await db.refresh(entry)
     return entry
