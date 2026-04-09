@@ -164,7 +164,7 @@ async def auto_translate(
     if not entry.translations:
         raise HTTPException(status_code=400, detail="No translations found. Add a source translation first.")
     
-    source_translation = entry.translations[0]
+    source_translation = min(entry.translations, key=lambda t: t.created_at)
     source_lang = source_translation.language_code
     source_text = source_translation.text
     

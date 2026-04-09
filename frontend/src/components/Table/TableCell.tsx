@@ -33,7 +33,8 @@ export default function TableCell({ entryId, translation, languageCode, isSource
     }
 
     if (translation) {
-      await updateTranslation(translation.id, { text: value.trim() });
+      const newStatus = translation.status === 'auto' ? 'verified' : translation.status;
+      await updateTranslation(translation.id, { text: value.trim(), status: newStatus });
     } else if (value.trim()) {
       await addTranslation(entryId, languageCode, value.trim(), isSource ? 'verified' : 'auto');
     }
