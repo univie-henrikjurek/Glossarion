@@ -4,7 +4,6 @@ import {
   getCoreRowModel,
   flexRender,
   createColumnHelper,
-  type ColumnDef,
 } from '@tanstack/react-table';
 import type { Entry, Translation } from '../../types';
 import { useDictionaryStore } from '../../stores/dictionaryStore';
@@ -19,7 +18,9 @@ export default function DictionaryTable() {
   const [translatingId, setTranslatingId] = useState<string | null>(null);
 
   const allLanguages = useMemo(() => {
-    const langs = new Set<string>([sourceLanguage, ...targetLanguages]);
+    const langs = new Set<string>();
+    langs.add(sourceLanguage);
+    targetLanguages.forEach(l => langs.add(l));
     entries.forEach((e: Entry) => {
       e.translations.forEach((t: Translation) => langs.add(t.language_code));
     });
@@ -35,8 +36,8 @@ export default function DictionaryTable() {
     }
   };
 
-  const columns = useMemo<ColumnDef<Entry, unknown>[]>(() => {
-    const cols: ColumnDef<Entry, unknown>[] = [
+  const columns = useMemo(() => {
+    const cols = [
       columnHelper.display({
         id: 'actions',
         header: '',
@@ -76,7 +77,10 @@ export default function DictionaryTable() {
     allLanguages.forEach((lang: string) => {
       cols.push(
         columnHelper.accessor(
-          (row) => row.translations.find((t: Translation) => t.language_code === lang)?.text || '',
+          (row) => {
+            const t = row.translations.find((tr: Translation) => tr.language_code === lang);
+            return t ? t.text : '';
+          },
           {
             id: `lang_${lang}`,
             header: lang.toUpperCase(),
