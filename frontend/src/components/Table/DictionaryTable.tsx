@@ -20,8 +20,7 @@ export default function DictionaryTable() {
   const { setShowEntryModal } = useAppStore();
   const [translatingId, setTranslatingId] = useState<string | null>(null);
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [visibleLanguages, setVisibleLanguages] = useState<Set<string>>(new Set());
-  const [showSettings, setShowSettings] = useState(false);
+  const [hiddenLanguages, setHiddenLanguages] = useState<Set<string>>(new Set());
 
   const allLanguages = useMemo(() => {
     const langs = new Set<string>();
@@ -33,6 +32,10 @@ export default function DictionaryTable() {
     return Array.from(langs);
   }, [entries, sourceLanguage, targetLanguages]);
 
+  const visibleLanguages = useMemo(() => {
+    return allLanguages.filter(lang => !hiddenLanguages.has(lang));
+  }, [allLanguages, hiddenLanguages]);
+
   const handleAutoTranslate = async (entryId: string) => {
     setTranslatingId(entryId);
     try {
@@ -43,21 +46,25 @@ export default function DictionaryTable() {
   };
 
   const toggleLanguage = (lang: string) => {
-    const newVisible = new Set(visibleLanguages);
-    if (newVisible.has(lang)) {
-      newVisible.delete(lang);
-    } else {
-      newVisible.add(lang);
-    }
-    setVisibleLanguages(newVisible);
+    setHiddenLanguages(prev => {
+      const next = new Set(prev);
+      if (next.has(lang)) {
+        next.delete(lang);
+      } else {
+        next.add(lang);
+      }
+      return next;
+    });
   };
+
+  const showAllLanguages = () => setHiddenLanguages(new Set());
 
   const columns = useMemo(() => {
     const cols = [
       columnHelper.display({
         id: 'actions',
         header: '',
-        size: 80,
+        size: 100,
         cell: ({ row }) => (
           <div className="flex items-center gap-2">
             <button
@@ -91,42 +98,45 @@ export default function DictionaryTable() {
       }),
     ];
 
-    allLanguages.forEach((lang: string) => {
-      const isVisible = visibleLanguages.size === 0 || visibleLanguages.has(lang);
-      if (isVisible) {
-        cols.push(
-          columnHelper.accessor(
-            (row) => {
-              const t = row.translations.find((tr: Translation) => tr.language_code === lang);
-              return t ? t.text : '';
+    visibleLanguages.forEach((lang: string) => {
+      cols.push(
+        columnHelper.accessor(
+          (row) => {
+            const t = row.translations.find((tr: Translation) => tr.language_code === lang);
+            return t ? t.text : '';
+          },
+          {
+            id: `lang_${lang}`,
+            header: () => (
+              <div 
+                className="flex items-center gap-2 cursor-pointer select-none hover:text-primary-400" 
+                onClick={() => setSorting([{ id: `lang_${lang}`, desc: false }])}
+              >
+                <span className="font-bold">{lang.toUpperCase()}</span>
+                <span className="text-xs text-slate-500">{LANGUAGE_NAMES[lang]?.slice(0, 3)}</span>
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                </svg>
+              </div>
+            ),
+            cell: ({ row }) => {
+              const translation = row.original.translations.find((t: Translation) => t.language_code === lang);
+              return (
+                <TableCell
+                  entryId={row.original.id}
+                  translation={translation}
+                  languageCode={lang}
+                  isSource={lang === sourceLanguage}
+                />
+              );
             },
-            {
-              id: `lang_${lang}`,
-              header: () => (
-                <div className="flex items-center gap-1 cursor-pointer select-none" onClick={() => setSorting([{ id: `lang_${lang}`, desc: false }])}>
-                  <span>{lang.toUpperCase()}</span>
-                  <span className="text-xs text-slate-500">{LANGUAGE_NAMES[lang]?.slice(0, 3)}</span>
-                </div>
-              ),
-              cell: ({ row }) => {
-                const translation = row.original.translations.find((t: Translation) => t.language_code === lang);
-                return (
-                  <TableCell
-                    entryId={row.original.id}
-                    translation={translation}
-                    languageCode={lang}
-                    isSource={lang === sourceLanguage}
-                  />
-                );
-              },
-            }
-          )
-        );
-      }
+          }
+        )
+      );
     });
 
     return cols;
-  }, [allLanguages, sourceLanguage, translatingId, deleteEntry, autoTranslate, visibleLanguages, sourceLanguage]);
+  }, [visibleLanguages, sourceLanguage, translatingId, deleteEntry]);
 
   const table = useReactTable({
     data: entries,
@@ -157,28 +167,33 @@ export default function DictionaryTable() {
 
   return (
     <div>
-      <div className="mb-4 flex items-center gap-4">
-        <button
-          onClick={() => setShowSettings(!showSettings)}
-          className="px-3 py-1 text-sm bg-slate-700 hover:bg-slate-600 rounded-lg"
-        >
-          {showSettings ? 'Hide' : 'Show'} Columns
-        </button>
-        {showSettings && (
-          <div className="flex flex-wrap gap-2">
-            {allLanguages.map((lang: string) => (
-              <label key={lang} className="flex items-center gap-1 text-sm">
-                <input
-                  type="checkbox"
-                  checked={visibleLanguages.size === 0 || visibleLanguages.has(lang)}
-                  onChange={() => toggleLanguage(lang)}
-                  className="rounded"
-                />
-                <span>{lang.toUpperCase()}</span>
-              </label>
-            ))}
-          </div>
-        )}
+      <div className="mb-4 p-3 bg-slate-800 rounded-lg border border-slate-700">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm text-slate-400">Visible columns:</span>
+          {hiddenLanguages.size > 0 && (
+            <button
+              onClick={showAllLanguages}
+              className="text-xs text-primary-400 hover:text-primary-300"
+            >
+              Show all ({allLanguages.length})
+            </button>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {allLanguages.map((lang: string) => (
+            <button
+              key={lang}
+              onClick={() => toggleLanguage(lang)}
+              className={`px-2 py-1 text-xs rounded transition-colors ${
+                hiddenLanguages.has(lang)
+                  ? 'bg-slate-700 text-slate-500 line-through'
+                  : 'bg-primary-600 text-white hover:bg-primary-500'
+              }`}
+            >
+              {lang.toUpperCase()} ({LANGUAGE_NAMES[lang]?.slice(0, 3)})
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="overflow-x-auto border border-slate-700 rounded-lg">
@@ -190,6 +205,7 @@ export default function DictionaryTable() {
                   <th
                     key={header.id}
                     className="px-4 py-3 text-left text-sm font-semibold text-slate-300 border-b border-slate-700"
+                    style={{ width: header.id === 'actions' ? 100 : undefined }}
                   >
                     {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                   </th>
