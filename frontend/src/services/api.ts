@@ -1,8 +1,10 @@
 import axios from 'axios';
 import type { Entry, Translation } from '../types';
 
+const API_URL = '/api';
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: API_URL,
 });
 
 export const apiService = {
@@ -37,7 +39,8 @@ export const apiService = {
     status: string = 'auto'
   ): Promise<Translation> {
     const response = await api.post<Translation>(
-      `/entries/${entryId}/translations?language_code=${languageCode}&text=${encodeURIComponent(text)}&status=${status}`
+      `/entries/${entryId}/translations`,
+      { language_code: languageCode, text, status }
     );
     return response.data;
   },

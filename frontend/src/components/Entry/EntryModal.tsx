@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
-import { useDictionaryStore, useAppStore } from '../../stores/appStore';
+import { useState } from 'react';
+import { useDictionaryStore } from '../../stores/dictionaryStore';
+import { useAppStore } from '../../stores/appStore';
 
 export default function EntryModal() {
   const { addEntry } = useDictionaryStore();
@@ -13,7 +14,7 @@ export default function EntryModal() {
     if (!context.trim()) return;
 
     setIsSubmitting(true);
-    const tagList = tags.split(',').map(t => t.trim()).filter(Boolean);
+    const tagList = tags.split(',').map((t: string) => t.trim()).filter(Boolean);
     await addEntry(context.trim(), tagList);
     setContext('');
     setTags('');

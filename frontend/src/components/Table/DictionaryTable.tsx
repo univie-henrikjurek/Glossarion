@@ -4,9 +4,11 @@ import {
   getCoreRowModel,
   flexRender,
   createColumnHelper,
+  type ColumnDef,
 } from '@tanstack/react-table';
-import type { Entry } from '../../types';
-import { useDictionaryStore, useAppStore } from '../../stores/appStore';
+import type { Entry, Translation } from '../../types';
+import { useDictionaryStore } from '../../stores/dictionaryStore';
+import { useAppStore } from '../../stores/appStore';
 import TableCell from './TableCell';
 
 const columnHelper = createColumnHelper<Entry>();
@@ -17,9 +19,9 @@ export default function DictionaryTable() {
   const [translatingId, setTranslatingId] = useState<string | null>(null);
 
   const allLanguages = useMemo(() => {
-    const langs = new Set([sourceLanguage, ...targetLanguages]);
-    entries.forEach(e => {
-      e.translations.forEach(t => langs.add(t.language_code));
+    const langs = new Set<string>([sourceLanguage, ...targetLanguages]);
+    entries.forEach((e: Entry) => {
+      e.translations.forEach((t: Translation) => langs.add(t.language_code));
     });
     return Array.from(langs);
   }, [entries, sourceLanguage, targetLanguages]);
@@ -33,8 +35,8 @@ export default function DictionaryTable() {
     }
   };
 
-  const columns = useMemo(() => {
-    const cols = [
+  const columns = useMemo<ColumnDef<Entry, unknown>[]>(() => {
+    const cols: ColumnDef<Entry, unknown>[] = [
       columnHelper.display({
         id: 'actions',
         header: '',
@@ -71,15 +73,15 @@ export default function DictionaryTable() {
       }),
     ];
 
-    allLanguages.forEach(lang => {
+    allLanguages.forEach((lang: string) => {
       cols.push(
         columnHelper.accessor(
-          (row) => row.translations.find(t => t.language_code === lang)?.text || '',
+          (row) => row.translations.find((t: Translation) => t.language_code === lang)?.text || '',
           {
             id: `lang_${lang}`,
             header: lang.toUpperCase(),
             cell: ({ row }) => {
-              const translation = row.original.translations.find(t => t.language_code === lang);
+              const translation = row.original.translations.find((t: Translation) => t.language_code === lang);
               return (
                 <TableCell
                   entryId={row.original.id}

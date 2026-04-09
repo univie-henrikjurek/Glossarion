@@ -1,5 +1,5 @@
-import { openDB, DBSchema, IDBPDatabase } from 'idb';
-import type { Entry, Translation } from '../types';
+import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
+import type { Entry } from '../types';
 
 interface GlossarionDB extends DBSchema {
   entries: {

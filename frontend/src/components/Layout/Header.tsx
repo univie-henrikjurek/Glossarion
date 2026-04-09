@@ -1,4 +1,5 @@
-import { useDictionaryStore, useAppStore } from '../../stores/appStore';
+import { useDictionaryStore } from '../../stores/dictionaryStore';
+import { useAppStore } from '../../stores/appStore';
 
 export default function Header() {
   const { entries, isOnline, lastSync } = useDictionaryStore();
