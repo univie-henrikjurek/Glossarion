@@ -154,22 +154,26 @@ async def auto_translate(
     translator: TranslatorService = Depends(get_translator_service),
     db: AsyncSession = Depends(get_db)
 ):
-    query = select(Entry).where(Entry.id == entry_id)
+    query = select(Entry).options(selectinload(Entry.translations)).where(Entry.id == entry_id)
     result = await db.execute(query)
     entry = result.scalar_one_or_none()
     
     if not entry:
         raise HTTPException(status_code=404, detail="Entry not found")
     
-    source_translations = [t for t in entry.translations if t.language_code == settings.source_language]
-    if not source_translations:
-        raise HTTPException(status_code=400, detail=f"No source translation found for language: {settings.source_language}")
+    if not entry.translations:
+        raise HTTPException(status_code=400, detail="No translations found. Add a source translation first.")
     
-    source_text = source_translations[0].text
+    source_translation = entry.translations[0]
+    source_lang = source_translation.language_code
+    source_text = source_translation.text
+    
+    target_langs = [lang for lang in settings.target_language_list if lang != source_lang]
+    
     translations = await translator.translate_to_languages(
         source_text,
-        source_lang=settings.source_language,
-        target_langs=settings.target_language_list
+        source_lang=source_lang,
+        target_langs=target_langs
     )
     
     created = []
