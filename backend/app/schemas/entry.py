@@ -17,17 +17,24 @@ class EntryUpdate(BaseModel):
     tags: Optional[list[str]] = None
 
 
-class TranslationInEntry(BaseModel):
+class TranslationResponse(BaseModel):
+    id: str
+    entry_id: str
     language_code: str
     text: str
-    status: str = "auto"
+    status: str
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True
 
 
 class EntryResponse(BaseModel):
     id: str
     context: Optional[str] = None
     tags: list[str] = Field(default_factory=list)
-    translations: list = Field(default_factory=list)
+    translations: list[TranslationResponse] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime
     
