@@ -1,0 +1,52 @@
+[
+  {
+    "context": "Hello, how are you?",
+    "tags": ["greeting", "casual"],
+    "translations": {
+      "de": "Hallo, wie geht es dir?",
+      "fr": "Bonjour, comment allez-vous?",
+      "es": "Hola, ¿cómo estás?",
+      "it": "Ciao, come stai?"
+    }
+  },
+  {
+    "context": "Thank you very much",
+    "tags": ["politeness"],
+    "translations": {
+      "de": "Vielen Dank",
+      "fr": "Merci beaucoup",
+      "es": "Muchas gracias",
+      "it": "Grazie mille"
+    }
+  },
+  {
+    "context": "Where is the train station?",
+    "tags": ["travel", "question"],
+    "translations": {
+      "de": "Wo ist der Bahnhof?",
+      "fr": "Où est la gare?",
+      "es": "¿Dónde está la estación de tren?",
+      "it": "Dov'è la stazione ferroviaria?"
+    }
+  },
+  {
+    "context": "I would like a coffee, please",
+    "tags": ["food", "ordering"],
+    "translations": {
+      "de": "Ich möchte bitte einen Kaffee",
+      "fr": "Je voudrais un café, s'il vous plaît",
+      "es": "Me gustaría un café, por favor",
+      "it": "Vorrei un caffè, per favore"
+    }
+  },
+  {
+    "context": "The weather is nice today",
+    "tags": ["weather", "observation"],
+    "translations": {
+      "de": "Das Wetter ist heute schön",
+      "fr": "Le temps est beau aujourd'hui",
+      "es": "El tiempo está agradable hoy",
+      "it": "Il tempo è bello oggi"
+    }
+  }
+]

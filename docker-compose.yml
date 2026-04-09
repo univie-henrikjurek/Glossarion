@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: glossarion_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-glossarion}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me}
+      POSTGRES_DB: ${POSTGRES_DB:-glossarion}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-glossarion}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - glossarion_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: glossarion_backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      LIBRETRANSLATE_URL: ${LIBRETRANSLATE_URL:-http://libretranslate:3000}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:80}
+      SOURCE_LANGUAGE: ${SOURCE_LANGUAGE:-en}
+      TARGET_LANGUAGES: ${TARGET_LANGUAGES:-de,fr,es}
+    volumes:
+      - ./backend:/app
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - glossarion_network
+
+  libretranslate:
+    image: libretranslate/libretranslate:latest
+    container_name: glossarion_libretranslate
+    restart: unless-stopped
+    environment:
+      REDIS_URL: redis://redis:6379
+      LIMIT_FILE_SIZE: true
+      REQUIRE_API_KEY: false
+      LOAD_ONLY: ${TARGET_LANGUAGES:-de,fr,es}
+    depends_on:
+      - redis
+    networks:
+      - glossarion_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: glossarion_redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    networks:
+      - glossarion_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: glossarion_frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - glossarion_network
+
+networks:
+  glossarion_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:

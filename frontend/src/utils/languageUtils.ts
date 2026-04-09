@@ -1,0 +1,36 @@
+export const LANGUAGE_NAMES: Record<string, string> = {
+  en: 'English',
+  de: 'German',
+  fr: 'French',
+  es: 'Spanish',
+  it: 'Italian',
+  pt: 'Portuguese',
+  nl: 'Dutch',
+  pl: 'Polish',
+  ru: 'Russian',
+  zh: 'Chinese',
+  ja: 'Japanese',
+  ko: 'Korean',
+  ar: 'Arabic',
+  hi: 'Hindi',
+  tr: 'Turkish',
+  cs: 'Czech',
+  sv: 'Swedish',
+  da: 'Danish',
+  fi: 'Finnish',
+  no: 'Norwegian',
+  el: 'Greek',
+  he: 'Hebrew',
+  th: 'Thai',
+  vi: 'Vietnamese',
+  id: 'Indonesian',
+  uk: 'Ukrainian',
+  hu: 'Hungarian',
+  ro: 'Romanian',
+  bg: 'Bulgarian',
+  sk: 'Slovak',
+};
+
+export function getLanguageName(code: string): string {
+  return LANGUAGE_NAMES[code.toLowerCase()] || code.toUpperCase();
+}
