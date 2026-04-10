@@ -42,7 +42,7 @@ export default function TableCell({ entryId, translation, languageCode, isSource
   const [value, setValue] = useState(translation?.text || '');
   const inputRef = useRef<HTMLInputElement>(null);
   const { addTranslation, updateTranslation } = useDictionaryStore();
-  const { grammarMode } = useAppStore();
+  const { grammarMode, openWordDetails } = useAppStore();
 
   useEffect(() => {
     setValue(translation?.text || '');
@@ -85,6 +85,14 @@ export default function TableCell({ entryId, translation, languageCode, isSource
     }
   };
 
+  const handleDoubleClick = () => {
+    const { entries } = useDictionaryStore.getState();
+    const entry = entries.find(e => e.id === entryId);
+    if (entry) {
+      openWordDetails(entry, translation || null, languageCode);
+    }
+  };
+
   if (isEditing) {
     return (
       <div className="flex items-center gap-2">
@@ -108,7 +116,7 @@ export default function TableCell({ entryId, translation, languageCode, isSource
   return (
     <div 
       className="editable-cell px-2 py-1 min-h-[3rem] flex items-start justify-between gap-2"
-      onDoubleClick={() => setIsEditing(true)}
+      onDoubleClick={handleDoubleClick}
     >
       <div className="flex-1">
         <div className="text-sm">{displayText || <span className="text-slate-500 italic">Double-click to edit</span>}</div>

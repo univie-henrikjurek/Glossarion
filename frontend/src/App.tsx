@@ -3,6 +3,7 @@ import { useDictionaryStore } from './stores/dictionaryStore';
 import Header from './components/Layout/Header';
 import DictionaryTable from './components/Table/DictionaryTable';
 import EntryModal from './components/Entry/EntryModal';
+import WordDetailsPanel from './components/WordDetails/WordDetailsPanel';
 
 const glowStyles = `
 @keyframes translateBreath {
@@ -77,6 +78,7 @@ function App() {
         </main>
         
         <EntryModal />
+        <WordDetailsPanel />
       </div>
     </>
   );
