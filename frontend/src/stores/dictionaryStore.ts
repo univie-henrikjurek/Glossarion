@@ -35,7 +35,7 @@ export const useDictionaryStore = create<DictionaryState>((set, get) => ({
   entries: [],
   languages: [],
   sourceLanguage: 'en',
-  targetLanguages: ['de', 'fr', 'es'],
+  targetLanguages: ['en', 'de', 'fr', 'es', 'it'],
   availableLanguages: ALL_LANGUAGES,
   isLoading: false,
   isOnline: navigator.onLine,
