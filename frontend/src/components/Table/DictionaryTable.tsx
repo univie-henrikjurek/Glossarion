@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import type { Entry, Translation } from '../../types';
 import { useDictionaryStore } from '../../stores/dictionaryStore';
 import { useAppStore } from '../../stores/appStore';
@@ -20,10 +20,10 @@ function TranslateIcon({ className = '' }: { className?: string }) {
   );
 }
 
-function GlowTranslateIcon({ active }: { active: boolean }) {
+function GlowTranslateIcon({ active, style }: { active: boolean; style?: React.CSSProperties }) {
   if (active) {
     return (
-      <span className="translate-glow-active relative inline-flex items-center justify-center">
+      <span className="translate-glow-active relative inline-flex items-center justify-center" style={style}>
         <span className="translate-glow-ring absolute w-6 h-6 rounded-full"></span>
         <span className="translate-glow-icon relative">
           <TranslateIcon className="text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.9)]" />
@@ -39,6 +39,14 @@ export default function DictionaryTable() {
   const { setShowEntryModal } = useAppStore();
   const [translatingId, setTranslatingId] = useState<string | null>(null);
   const [translateAllProgress, setTranslateAllProgress] = useState<{ current: number; total: number } | null>(null);
+  const animationStartTime = useRef<number>(Date.now());
+  
+  const getAnimationDelay = () => {
+    const elapsed = Date.now() - animationStartTime.current;
+    const duration = 2500;
+    const delay = -(elapsed % duration);
+    return delay;
+  };
   const [hiddenColumns, setHiddenColumns] = useState<Set<string>>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -256,7 +264,7 @@ export default function DictionaryTable() {
                         title={isTargetLang ? 'Click to disable auto-translate' : 'Click to enable auto-translate'}
                         className="p-0.5 rounded hover:bg-slate-700/50 transition-colors"
                       >
-                        <GlowTranslateIcon active={isTargetLang} />
+                        <GlowTranslateIcon active={isTargetLang} style={{ animationDelay: `${getAnimationDelay()}ms` }} />
                       </button>
                       <button
                         onClick={() => toggleColumn(`lang_${lang}`)}
