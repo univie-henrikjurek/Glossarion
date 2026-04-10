@@ -16,7 +16,7 @@ import TableCell from './TableCell';
 const columnHelper = createColumnHelper<Entry>();
 
 export default function DictionaryTable() {
-  const { entries, sourceLanguage, targetLanguages, deleteEntry, autoTranslate } = useDictionaryStore();
+  const { entries, sourceLanguage, targetLanguages, availableLanguages, deleteEntry, autoTranslate, toggleTargetLanguage } = useDictionaryStore();
   const { setShowEntryModal } = useAppStore();
   const [translatingId, setTranslatingId] = useState<string | null>(null);
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -184,6 +184,30 @@ export default function DictionaryTable() {
 
   return (
     <div>
+      <div className="mb-4 p-3 bg-slate-800 rounded-lg border border-slate-700">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm text-slate-400">Auto-translate to:</span>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {availableLanguages
+            .filter(lang => lang !== sourceLanguage)
+            .map((lang: string) => (
+              <button
+                key={lang}
+                onClick={() => toggleTargetLanguage(lang)}
+                className={`px-2 py-1 text-xs rounded transition-colors ${
+                  targetLanguages.includes(lang)
+                    ? 'bg-primary-600 text-white hover:bg-primary-500'
+                    : 'bg-slate-700 text-slate-500 hover:bg-slate-600'
+                }`}
+                title={targetLanguages.includes(lang) ? 'Click to exclude from auto-translate' : 'Click to include in auto-translate'}
+              >
+                {lang.toUpperCase()} ({LANGUAGE_NAMES[lang]?.slice(0, 3)})
+              </button>
+            ))}
+        </div>
+      </div>
+
       <div className="mb-4 p-3 bg-slate-800 rounded-lg border border-slate-700">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm text-slate-400">Visible columns:</span>

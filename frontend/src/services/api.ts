@@ -57,9 +57,12 @@ export const apiService = {
     await api.delete(`/translations/${id}`);
   },
 
-  async autoTranslate(entryId: string): Promise<{ translations: Array<{ language_code: string; text: string }> }> {
+  async autoTranslate(entryId: string, targetLangs?: string[]): Promise<{ translations: Array<{ language_code: string; text: string }> }> {
+    const params = targetLangs ? { target_langs: targetLangs } : {};
     const response = await api.post<{ translations: Array<{ language_code: string; text: string }> }>(
-      `/entries/${entryId}/translate`
+      `/entries/${entryId}/translate`,
+      {},
+      { params }
     );
     return response.data;
   },

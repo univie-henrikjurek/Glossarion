@@ -152,7 +152,8 @@ async def add_translation(
 async def auto_translate(
     entry_id: str,
     translator: TranslatorService = Depends(get_translator_service),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    target_langs: list[str] | None = None
 ):
     query = select(Entry).options(selectinload(Entry.translations)).where(Entry.id == entry_id)
     result = await db.execute(query)
@@ -168,7 +169,16 @@ async def auto_translate(
     source_lang = source_translation.language_code
     source_text = source_translation.text
     
-    target_langs = [lang for lang in settings.target_language_list if lang != source_lang]
+    if target_langs is None:
+        target_langs = [lang for lang in settings.target_language_list if lang != source_lang]
+    else:
+        target_langs = [lang for lang in target_langs if lang != source_lang]
+    
+    existing_langs = {t.language_code for t in entry.translations}
+    target_langs = [lang for lang in target_langs if lang not in existing_langs]
+    
+    if not target_langs:
+        return {"translations": [], "message": "All target languages already exist"}
     
     translations = await translator.translate_to_languages(
         source_text,

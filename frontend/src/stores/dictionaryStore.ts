@@ -8,6 +8,7 @@ interface DictionaryState {
   languages: string[];
   sourceLanguage: string;
   targetLanguages: string[];
+  availableLanguages: string[];
   isLoading: boolean;
   isOnline: boolean;
   lastSync: string | null;
@@ -20,17 +21,22 @@ interface DictionaryState {
   addTranslation: (entryId: string, languageCode: string, text: string, status?: string) => Promise<void>;
   updateTranslation: (id: string, data: { text?: string; status?: string }) => Promise<void>;
   deleteTranslation: (id: string) => Promise<void>;
-  autoTranslate: (entryId: string) => Promise<void>;
+  autoTranslate: (entryId: string, targetLangs?: string[]) => Promise<void>;
+  setTargetLanguages: (langs: string[]) => void;
+  toggleTargetLanguage: (lang: string) => void;
   setOnline: (online: boolean) => void;
   syncWithServer: () => Promise<void>;
   clearError: () => void;
 }
+
+const ALL_LANGUAGES = ['en', 'de', 'fr', 'es', 'it', 'pt', 'nl', 'pl', 'ru'];
 
 export const useDictionaryStore = create<DictionaryState>((set, get) => ({
   entries: [],
   languages: [],
   sourceLanguage: 'en',
   targetLanguages: ['de', 'fr', 'es'],
+  availableLanguages: ALL_LANGUAGES,
   isLoading: false,
   isOnline: navigator.onLine,
   lastSync: null,
@@ -130,15 +136,31 @@ export const useDictionaryStore = create<DictionaryState>((set, get) => ({
     }
   },
 
-  autoTranslate: async (entryId: string): Promise<void> => {
+  autoTranslate: async (entryId: string, targetLangs?: string[]): Promise<void> => {
     try {
-      await apiService.autoTranslate(entryId);
+      const targets = targetLangs || get().targetLanguages;
+      await apiService.autoTranslate(entryId, targets);
       const updated = await apiService.getEntry(entryId);
       const entries = get().entries.map(e => e.id === entryId ? updated : e);
       await syncService.updateLocalEntry(updated);
       set({ entries });
     } catch {
       set({ error: 'Translation service unavailable' });
+    }
+  },
+
+  setTargetLanguages: (langs: string[]) => {
+    set({ targetLanguages: langs });
+  },
+
+  toggleTargetLanguage: (lang: string) => {
+    const current = get().targetLanguages;
+    if (current.includes(lang)) {
+      if (current.length > 1) {
+        set({ targetLanguages: current.filter(l => l !== lang) });
+      }
+    } else {
+      set({ targetLanguages: [...current, lang] });
     }
   },
 
