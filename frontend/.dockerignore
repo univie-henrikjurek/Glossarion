@@ -1,0 +1,15 @@
+node_modules
+.git
+*.log
+.env
+.env.*
+dist
+coverage
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+src/**/*.test.*
+src/**/*.spec.*
+__tests__
+__mocks__

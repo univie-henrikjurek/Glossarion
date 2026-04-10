@@ -56,5 +56,18 @@ export default defineConfig({
         changeOrigin: true
       }
     }
+  },
+  build: {
+    minify: 'esbuild',
+    target: 'esnext',
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          table: ['@tanstack/react-table'],
+        }
+      }
+    }
   }
 })
