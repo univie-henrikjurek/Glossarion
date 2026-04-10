@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Any
 from pydantic import BaseModel, Field
 
 
@@ -17,12 +17,11 @@ class EntryUpdate(BaseModel):
     tags: Optional[list[str]] = None
 
 
-class TranslationResponse(BaseModel):
+class EntryResponse(BaseModel):
     id: str
-    entry_id: str
-    language_code: str
-    text: str
-    status: str
+    context: Optional[str] = None
+    tags: list[str] = Field(default_factory=list)
+    translations: list["TranslationResponseBase"] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime
     
@@ -30,11 +29,16 @@ class TranslationResponse(BaseModel):
         from_attributes = True
 
 
-class EntryResponse(BaseModel):
+class TranslationResponseBase(BaseModel):
     id: str
-    context: Optional[str] = None
-    tags: list[str] = Field(default_factory=list)
-    translations: list[TranslationResponse] = Field(default_factory=list)
+    entry_id: str
+    language_code: str
+    text: str
+    status: str
+    word_type: Optional[str] = None
+    gender: Optional[str] = None
+    article: Optional[str] = None
+    grammar_details: Optional[Any] = None
     created_at: datetime
     updated_at: datetime
     

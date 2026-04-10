@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import Column, String, Text, DateTime, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, String, Text, DateTime, ForeignKey, UniqueConstraint, JSON
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -13,6 +13,10 @@ class Translation(Base):
     language_code = Column(String(10), nullable=False)
     text = Column(Text, nullable=False)
     status = Column(String(20), default="auto")
+    word_type = Column(String(20), nullable=True)
+    gender = Column(String(10), nullable=True)
+    article = Column(String(20), nullable=True)
+    grammar_details = Column(JSON, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     

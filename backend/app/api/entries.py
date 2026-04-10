@@ -7,7 +7,7 @@ from sqlalchemy.orm import selectinload
 from app.database import get_db
 from app.models import Entry, Translation
 from app.schemas import EntryCreate, EntryUpdate, EntryResponse, TranslationCreate, TranslationResponse
-from app.services import TranslatorService, get_translator_service
+from app.services import TranslatorService, get_translator_service, get_grammar_service, get_wiktionary_service
 from app.config import get_settings
 
 router = APIRouter(prefix="/api/entries", tags=["entries"])
@@ -41,6 +41,8 @@ async def list_entries(
 @router.post("", response_model=EntryResponse, status_code=status.HTTP_201_CREATED)
 async def create_entry(
     entry_data: EntryCreate,
+    grammar_service=Depends(get_grammar_service),
+    wiktionary_service=Depends(get_wiktionary_service),
     db: AsyncSession = Depends(get_db)
 ):
     source_lang = entry_data.source_language or settings.source_language
@@ -53,11 +55,37 @@ async def create_entry(
     await db.flush()
     
     if entry_data.context:
+        word_type = None
+        gender = None
+        article = None
+        grammar_details = None
+        
+        grammar_info = grammar_service.analyze(entry_data.context, source_lang)
+        if grammar_info.word_type:
+            word_type = grammar_info.word_type
+        
+        wiktionary_info = wiktionary_service.lookup(entry_data.context, source_lang)
+        if wiktionary_info.word_type:
+            word_type = wiktionary_info.word_type
+        if wiktionary_info.gender:
+            gender = wiktionary_info.gender
+        if wiktionary_info.article:
+            article = wiktionary_info.article
+        if wiktionary_info.details:
+            grammar_details = {"wiktionary": wiktionary_info.details}
+        if grammar_info.details:
+            grammar_details = grammar_details or {}
+            grammar_details["spacy"] = grammar_info.details
+        
         translation = Translation(
             entry_id=entry.id,
             language_code=source_lang,
             text=entry_data.context,
-            status="verified"
+            status="verified",
+            word_type=word_type,
+            gender=gender,
+            article=article,
+            grammar_details=grammar_details
         )
         db.add(translation)
     
@@ -152,6 +180,8 @@ async def add_translation(
 async def auto_translate(
     entry_id: str,
     translator: TranslatorService = Depends(get_translator_service),
+    grammar_service=Depends(get_grammar_service),
+    wiktionary_service=Depends(get_wiktionary_service),
     db: AsyncSession = Depends(get_db),
     target_langs: list[str] = Query(default=None)
 ):
@@ -188,17 +218,46 @@ async def auto_translate(
     
     created = []
     for lang_code, text in translations.items():
+        word_type = None
+        gender = None
+        article = None
+        grammar_details = None
+        
+        grammar_info = grammar_service.analyze(text, lang_code)
+        if grammar_info.word_type:
+            word_type = grammar_info.word_type
+        
+        wiktionary_info = wiktionary_service.lookup(text, lang_code)
+        if wiktionary_info.word_type:
+            word_type = wiktionary_info.word_type
+        if wiktionary_info.gender:
+            gender = wiktionary_info.gender
+        if wiktionary_info.article:
+            article = wiktionary_info.article
+        if wiktionary_info.details:
+            grammar_details = {"wiktionary": wiktionary_info.details}
+        if grammar_info.details:
+            grammar_details = grammar_details or {}
+            grammar_details["spacy"] = grammar_info.details
+        
         translation = Translation(
             entry_id=entry_id,
             language_code=lang_code,
             text=text,
-            status="auto"
+            status="auto",
+            word_type=word_type,
+            gender=gender,
+            article=article,
+            grammar_details=grammar_details
         )
         db.add(translation)
         created.append({
             "language_code": lang_code,
             "text": text,
-            "status": "auto"
+            "status": "auto",
+            "word_type": word_type,
+            "gender": gender,
+            "article": article
         })
     
     entry.updated_at = datetime.utcnow()

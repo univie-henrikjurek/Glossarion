@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import type { Translation } from '../../types';
 import { useDictionaryStore } from '../../stores/dictionaryStore';
+import { useAppStore } from '../../stores/appStore';
 import TranslationStatus from '../Translation/TranslationStatus';
 
 interface TableCellProps {
@@ -10,11 +11,42 @@ interface TableCellProps {
   isSource: boolean;
 }
 
+function formatGrammarInfo(translation: Translation, languageCode: string): string {
+  const parts: string[] = [];
+  
+  if (translation.article) {
+    parts.push(translation.article);
+  }
+  
+  if (translation.gender) {
+    parts.push(translation.gender);
+  }
+  
+  if (translation.word_type) {
+    parts.push(translation.word_type);
+  }
+  
+  if (translation.grammar_details?.spacy) {
+    parts.push(translation.grammar_details.spacy);
+  }
+  
+  if (translation.grammar_details?.wiktionary) {
+    parts.push(translation.grammar_details.wikitionary);
+  }
+  
+  if (parts.length > 0) {
+    return `, ${parts.join(', ')}`;
+  }
+  
+  return '';
+}
+
 export default function TableCell({ entryId, translation, languageCode, isSource }: TableCellProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [value, setValue] = useState(translation?.text || '');
   const inputRef = useRef<HTMLInputElement>(null);
   const { addTranslation, updateTranslation } = useDictionaryStore();
+  const { grammarMode } = useAppStore();
 
   useEffect(() => {
     setValue(translation?.text || '');
@@ -74,13 +106,25 @@ export default function TableCell({ entryId, translation, languageCode, isSource
     );
   }
 
+  const displayText = value || '';
+  const grammarSuffix = grammarMode && translation ? formatGrammarInfo(translation, languageCode) : '';
+
   return (
     <div 
       className="editable-cell px-2 py-1 min-h-[2.5rem] flex items-center justify-between gap-2"
       onDoubleClick={() => setIsEditing(true)}
     >
       <span className="flex-1 text-sm">
-        {value || <span className="text-slate-500 italic">Double-click to edit</span>}
+        {displayText ? (
+          <>
+            {displayText}
+            <span className={`text-slate-500 ml-1 ${grammarMode ? '' : 'hidden'}`}>
+              {grammarSuffix}
+            </span>
+          </>
+        ) : (
+          <span className="text-slate-500 italic">Double-click to edit</span>
+        )}
       </span>
       {translation && (
         <button

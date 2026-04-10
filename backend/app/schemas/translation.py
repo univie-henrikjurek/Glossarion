@@ -1,5 +1,6 @@
 from datetime import datetime
 from pydantic import BaseModel, Field
+from typing import Optional, Any
 
 
 class TranslationCreate(BaseModel):
@@ -11,6 +12,10 @@ class TranslationCreate(BaseModel):
 class TranslationUpdate(BaseModel):
     text: str | None = None
     status: str | None = None
+    word_type: Optional[str] = None
+    gender: Optional[str] = None
+    article: Optional[str] = None
+    grammar_details: Optional[Any] = None
 
 
 class TranslationResponse(BaseModel):
@@ -19,6 +24,10 @@ class TranslationResponse(BaseModel):
     language_code: str
     text: str
     status: str
+    word_type: Optional[str] = None
+    gender: Optional[str] = None
+    article: Optional[str] = None
+    grammar_details: Optional[Any] = None
     created_at: datetime
     updated_at: datetime
     

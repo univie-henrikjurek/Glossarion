@@ -4,6 +4,10 @@ export interface Translation {
   language_code: string;
   text: string;
   status: 'auto' | 'verified';
+  word_type?: string;
+  gender?: string;
+  article?: string;
+  grammar_details?: Record<string, string>;
   created_at: string;
   updated_at: string;
 }
