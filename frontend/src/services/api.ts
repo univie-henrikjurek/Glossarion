@@ -58,12 +58,10 @@ export const apiService = {
   },
 
   async autoTranslate(entryId: string, targetLangs?: string[]): Promise<{ translations: Array<{ language_code: string; text: string }> }> {
-    const params = targetLangs ? { target_langs: targetLangs } : {};
-    const response = await api.post<{ translations: Array<{ language_code: string; text: string }> }>(
-      `/entries/${entryId}/translate`,
-      {},
-      { params }
-    );
+    const url = targetLangs && targetLangs.length > 0
+      ? `/entries/${entryId}/translate?${targetLangs.map(l => `target_langs=${l}`).join('&')}`
+      : `/entries/${entryId}/translate`;
+    const response = await api.post<{ translations: Array<{ language_code: string; text: string }> }>(url);
     return response.data;
   },
 

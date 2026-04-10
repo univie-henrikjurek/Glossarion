@@ -1,5 +1,5 @@
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -153,7 +153,7 @@ async def auto_translate(
     entry_id: str,
     translator: TranslatorService = Depends(get_translator_service),
     db: AsyncSession = Depends(get_db),
-    target_langs: list[str] | None = None
+    target_langs: list[str] = Query(default=None)
 ):
     query = select(Entry).options(selectinload(Entry.translations)).where(Entry.id == entry_id)
     result = await db.execute(query)

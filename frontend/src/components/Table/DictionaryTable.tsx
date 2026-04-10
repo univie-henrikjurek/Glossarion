@@ -190,7 +190,6 @@ export default function DictionaryTable() {
         </div>
         <div className="flex flex-wrap gap-2">
           {availableLanguages
-            .filter(lang => lang !== sourceLanguage)
             .map((lang: string) => (
               <button
                 key={lang}
