@@ -285,14 +285,14 @@ export default function DictionaryTable() {
       </div>
 
       <div className="overflow-x-auto border border-slate-700 rounded-lg">
-        <table className="w-full">
+        <table className="w-full border-collapse">
           <thead className="bg-slate-800">
             {table.getHeaderGroups().map(headerGroup => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map(header => (
                   <th
                     key={header.id}
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-300 border-b border-slate-700"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-300 border-b border-r border-slate-700"
                     style={{ width: header.id === 'actions' ? 100 : undefined }}
                   >
                     {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
@@ -305,7 +305,7 @@ export default function DictionaryTable() {
             {table.getRowModel().rows.map(row => (
               <tr key={row.id} className="hover:bg-slate-800/50">
                 {row.getVisibleCells().map(cell => (
-                  <td key={cell.id} className="px-4 py-3 border-r border-slate-700 last:border-r-0">
+                  <td key={cell.id} className="px-4 py-3 border-r border-slate-700">
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </td>
                 ))}
