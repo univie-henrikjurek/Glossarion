@@ -6,6 +6,7 @@ import { LANGUAGE_NAMES } from '../../utils/languageUtils';
 import TableCell from './TableCell';
 
 const STORAGE_KEY = 'glossarion_hidden_columns';
+const ANIMATION_DURATION = 2500;
 
 function TranslateIcon({ className = '' }: { className?: string }) {
   return (
@@ -20,18 +21,18 @@ function TranslateIcon({ className = '' }: { className?: string }) {
   );
 }
 
-function GlowTranslateIcon({ active, style }: { active: boolean; style?: React.CSSProperties }) {
-  if (active) {
-    return (
-      <span className="translate-glow-active relative inline-flex items-center justify-center" style={style}>
-        <span className="translate-glow-ring absolute w-6 h-6 rounded-full"></span>
-        <span className="translate-glow-icon relative">
-          <TranslateIcon className="text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.9)]" />
-        </span>
+function GlowTranslateIcon({ active, delay = 0 }: { active: boolean; delay?: number }) {
+  return (
+    <span 
+      className="translate-glow-active relative inline-flex items-center justify-center"
+      style={{ animationDelay: `${delay}ms`, animationPlayState: active ? 'running' : 'paused' }}
+    >
+      <span className="translate-glow-ring absolute w-6 h-6 rounded-full" style={{ opacity: active ? 1 : 0 }} />
+      <span className="translate-glow-icon relative">
+        <TranslateIcon className={active ? 'text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.9)]' : 'text-slate-600'} />
       </span>
-    );
-  }
-  return <TranslateIcon className="text-slate-600" />;
+    </span>
+  );
 }
 
 export default function DictionaryTable() {
@@ -41,12 +42,11 @@ export default function DictionaryTable() {
   const [translateAllProgress, setTranslateAllProgress] = useState<{ current: number; total: number } | null>(null);
   const animationStartTime = useRef<number>(Date.now());
   
-  const getAnimationDelay = () => {
+  const getSyncDelay = () => {
     const elapsed = Date.now() - animationStartTime.current;
-    const duration = 2500;
-    const delay = -(elapsed % duration);
-    return delay;
+    return -(elapsed % ANIMATION_DURATION);
   };
+  
   const [hiddenColumns, setHiddenColumns] = useState<Set<string>>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -152,7 +152,7 @@ export default function DictionaryTable() {
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium text-slate-300">Auto-translate:</span>
                 <div className="flex items-center gap-2">
-                  {allLanguages.map((lang: string) => (
+{availableLanguages.map((lang: string) => (
                     <button
                       key={lang}
                       onClick={() => toggleTargetLanguage(lang)}
@@ -264,7 +264,7 @@ export default function DictionaryTable() {
                         title={isTargetLang ? 'Click to disable auto-translate' : 'Click to enable auto-translate'}
                         className="p-0.5 rounded hover:bg-slate-700/50 transition-colors"
                       >
-                        <GlowTranslateIcon active={isTargetLang} style={{ animationDelay: `${getAnimationDelay()}ms` }} />
+                        <GlowTranslateIcon active={isTargetLang} delay={getSyncDelay()} />
                       </button>
                       <button
                         onClick={() => toggleColumn(`lang_${lang}`)}
