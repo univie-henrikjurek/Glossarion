@@ -6,6 +6,7 @@ import {
   createColumnHelper,
   getSortedRowModel,
   type SortingState,
+  type ColumnDef,
 } from '@tanstack/react-table';
 import type { Entry, Translation } from '../../types';
 import { useDictionaryStore } from '../../stores/dictionaryStore';
@@ -20,7 +21,7 @@ export default function DictionaryTable() {
   const { setShowEntryModal } = useAppStore();
   const [translatingId, setTranslatingId] = useState<string | null>(null);
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [hiddenLanguages, setHiddenLanguages] = useState<Set<string>>(new Set());
+  const [hiddenColumns, setHiddenColumns] = useState<Set<string>>(new Set());
 
   const allLanguages = useMemo(() => {
     const langs = new Set<string>();
@@ -32,10 +33,6 @@ export default function DictionaryTable() {
     return Array.from(langs);
   }, [entries, sourceLanguage, targetLanguages]);
 
-  const visibleLanguages = useMemo(() => {
-    return allLanguages.filter(lang => !hiddenLanguages.has(lang));
-  }, [allLanguages, hiddenLanguages]);
-
   const handleAutoTranslate = async (entryId: string) => {
     setTranslatingId(entryId);
     try {
@@ -45,19 +42,19 @@ export default function DictionaryTable() {
     }
   };
 
-  const toggleLanguage = (lang: string) => {
-    setHiddenLanguages(prev => {
+  const toggleColumn = (columnId: string) => {
+    setHiddenColumns(prev => {
       const next = new Set(prev);
-      if (next.has(lang)) {
-        next.delete(lang);
+      if (next.has(columnId)) {
+        next.delete(columnId);
       } else {
-        next.add(lang);
+        next.add(columnId);
       }
       return next;
     });
   };
 
-  const showAllLanguages = () => setHiddenLanguages(new Set());
+  const showAllColumns = () => setHiddenColumns(new Set());
 
   const columns = useMemo(() => {
     const cols = [
@@ -98,7 +95,7 @@ export default function DictionaryTable() {
       }),
     ];
 
-    visibleLanguages.forEach((lang: string) => {
+    allLanguages.forEach((lang: string) => {
       cols.push(
         columnHelper.accessor(
           (row) => {
@@ -190,7 +187,7 @@ export default function DictionaryTable() {
     );
 
     return cols;
-  }, [visibleLanguages, sourceLanguage, translatingId, deleteEntry]);
+  }, [allLanguages, sourceLanguage, translatingId, deleteEntry]);
 
   const table = useReactTable({
     data: entries,
@@ -247,22 +244,22 @@ export default function DictionaryTable() {
       <div className="mb-4 p-3 bg-slate-800 rounded-lg border border-slate-700">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm text-slate-400">Visible columns:</span>
-          {hiddenLanguages.size > 0 && (
+          {hiddenColumns.size > 0 && (
             <button
-              onClick={showAllLanguages}
+              onClick={showAllColumns}
               className="text-xs text-primary-400 hover:text-primary-300"
             >
-              Show all ({allLanguages.length})
+              Show all
             </button>
           )}
         </div>
         <div className="flex flex-wrap gap-2">
           <button
-            onClick={() => toggleLanguage('date')}
+            onClick={() => toggleColumn('date')}
             className={`px-2 py-1 text-xs rounded transition-colors ${
-              hiddenLanguages.has('date')
-                ? 'bg-slate-700 text-slate-500 line-through'
-                : 'bg-primary-600 text-white hover:bg-primary-500'
+              !hiddenColumns.has('date')
+                ? 'bg-primary-600 text-white hover:bg-primary-500'
+                : 'bg-slate-700 text-slate-500 hover:bg-slate-600'
             }`}
             title="Toggle date column"
           >
@@ -271,11 +268,11 @@ export default function DictionaryTable() {
           {allLanguages.map((lang: string) => (
             <button
               key={lang}
-              onClick={() => toggleLanguage(lang)}
+              onClick={() => toggleColumn(`lang_${lang}`)}
               className={`px-2 py-1 text-xs rounded transition-colors ${
-                hiddenLanguages.has(lang)
-                  ? 'bg-slate-700 text-slate-500 line-through'
-                  : 'bg-primary-600 text-white hover:bg-primary-500'
+                !hiddenColumns.has(`lang_${lang}`)
+                  ? 'bg-primary-600 text-white hover:bg-primary-500'
+                  : 'bg-slate-700 text-slate-500 hover:bg-slate-600'
               }`}
             >
               {lang.toUpperCase()} ({LANGUAGE_NAMES[lang]?.slice(0, 3)})
@@ -289,26 +286,30 @@ export default function DictionaryTable() {
           <thead className="bg-slate-800">
             {table.getHeaderGroups().map(headerGroup => (
               <tr key={headerGroup.id}>
-                {headerGroup.headers.map(header => (
-                  <th
-                    key={header.id}
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-300 border-b border-r border-slate-700"
-                    style={{ width: header.id === 'actions' ? 100 : undefined }}
-                  >
-                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                  </th>
-                ))}
+                {headerGroup.headers
+                  .filter(header => !hiddenColumns.has(header.id))
+                  .map(header => (
+                    <th
+                      key={header.id}
+                      className="px-4 py-3 text-left text-sm font-semibold text-slate-300 border-b border-r border-slate-700"
+                      style={{ width: header.id === 'actions' ? 100 : undefined }}
+                    >
+                      {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                    </th>
+                  ))}
               </tr>
             ))}
           </thead>
           <tbody className="divide-y divide-slate-700">
             {table.getRowModel().rows.map(row => (
               <tr key={row.id} className="hover:bg-slate-800/50">
-                {row.getVisibleCells().map(cell => (
-                  <td key={cell.id} className="px-4 py-3 border-r border-slate-700">
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
+                {row.getVisibleCells()
+                  .filter(cell => !hiddenColumns.has(cell.column.id))
+                  .map(cell => (
+                    <td key={cell.id} className="px-4 py-3 border-r border-slate-700">
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </td>
+                  ))}
               </tr>
             ))}
           </tbody>
