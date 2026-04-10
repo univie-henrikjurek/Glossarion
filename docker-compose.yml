@@ -44,7 +44,7 @@ services:
       REDIS_URL: redis://redis:6379
       LIMIT_FILE_SIZE: true
       REQUIRE_API_KEY: false
-      LIBRETRANSLATE_LANGUAGES: en,de,fr,es,it
+      LT_LOAD_ONLY: en,de,fr,es,it
     depends_on:
       - redis
     networks:
