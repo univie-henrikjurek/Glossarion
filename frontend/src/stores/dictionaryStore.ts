@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import type { Entry } from '../types';
 import { apiService } from '../services/api';
 import { syncService } from '../services/syncService';
@@ -31,16 +32,20 @@ interface DictionaryState {
 
 const ALL_LANGUAGES = ['en', 'de', 'fr', 'es', 'it', 'pt', 'nl', 'pl', 'ru'];
 
-export const useDictionaryStore = create<DictionaryState>((set, get) => ({
-  entries: [],
-  languages: [],
-  sourceLanguage: 'en',
-  targetLanguages: ['en', 'de', 'fr', 'es', 'it'],
-  availableLanguages: ALL_LANGUAGES,
-  isLoading: false,
-  isOnline: navigator.onLine,
-  lastSync: null,
-  error: null,
+const DEFAULT_TARGET_LANGUAGES = ['en', 'de', 'fr', 'es', 'it'];
+
+export const useDictionaryStore = create<DictionaryState>()(
+  persist(
+    (set, get) => ({
+      entries: [],
+      languages: [],
+      sourceLanguage: 'en',
+      targetLanguages: DEFAULT_TARGET_LANGUAGES,
+      availableLanguages: ALL_LANGUAGES,
+      isLoading: false,
+      isOnline: navigator.onLine,
+      lastSync: null,
+      error: null,
 
   fetchEntries: async () => {
     set({ isLoading: true, error: null });
@@ -196,4 +201,11 @@ export const useDictionaryStore = create<DictionaryState>((set, get) => ({
   },
 
   clearError: () => set({ error: null }),
-}));
+}),
+{
+  name: 'glossarion-store',
+  partialize: (state) => ({
+    targetLanguages: state.targetLanguages,
+  }),
+}
+));
