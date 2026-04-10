@@ -131,7 +131,10 @@ export default function DictionaryTable() {
       </div>
 
       <div className="overflow-x-auto border border-slate-700 rounded-lg">
-        <table className="w-full">
+        <table 
+          className="w-full"
+          key={`table-${Array.from(hiddenColumns).sort().join('-')}`}
+        >
           <thead className="bg-slate-800">
             <tr>
               <th className="px-4 py-3 text-left text-sm font-semibold text-slate-300 border-b border-slate-700 w-24">
