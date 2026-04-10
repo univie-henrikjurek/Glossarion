@@ -11,7 +11,7 @@ interface TableCellProps {
   isSource: boolean;
 }
 
-function formatGrammarInfo(translation: Translation, languageCode: string): string {
+function formatGrammarInfo(translation: Translation): string {
   const parts: string[] = [];
   
   if (translation.article) {
@@ -26,19 +26,15 @@ function formatGrammarInfo(translation: Translation, languageCode: string): stri
     parts.push(translation.word_type);
   }
   
-  if (translation.grammar_details?.spacy) {
+  if (translation.grammar_details?.spacy && !parts.includes(translation.grammar_details.spacy)) {
     parts.push(translation.grammar_details.spacy);
   }
   
-  if (translation.grammar_details?.wiktionary) {
+  if (translation.grammar_details?.wiktionary && !parts.includes(translation.grammar_details.wikitionary)) {
     parts.push(translation.grammar_details.wikitionary);
   }
   
-  if (parts.length > 0) {
-    return `, ${parts.join(', ')}`;
-  }
-  
-  return '';
+  return parts.join(', ');
 }
 
 export default function TableCell({ entryId, translation, languageCode, isSource }: TableCellProps) {
@@ -107,29 +103,23 @@ export default function TableCell({ entryId, translation, languageCode, isSource
   }
 
   const displayText = value || '';
-  const grammarSuffix = grammarMode && translation ? formatGrammarInfo(translation, languageCode) : '';
+  const grammarSuffix = grammarMode && translation ? formatGrammarInfo(translation) : '';
 
   return (
     <div 
-      className="editable-cell px-2 py-1 min-h-[2.5rem] flex items-center justify-between gap-2"
+      className="editable-cell px-2 py-1 min-h-[3rem] flex items-start justify-between gap-2"
       onDoubleClick={() => setIsEditing(true)}
     >
-      <span className="flex-1 text-sm">
-        {displayText ? (
-          <>
-            {displayText}
-            <span className={`text-slate-500 ml-1 ${grammarMode ? '' : 'hidden'}`}>
-              {grammarSuffix}
-            </span>
-          </>
-        ) : (
-          <span className="text-slate-500 italic">Double-click to edit</span>
+      <div className="flex-1">
+        <div className="text-sm">{displayText || <span className="text-slate-500 italic">Double-click to edit</span>}</div>
+        {grammarSuffix && (
+          <div className="text-xs text-slate-500 mt-0.5">{grammarSuffix}</div>
         )}
-      </span>
+      </div>
       {translation && (
         <button
           onClick={handleToggleStatus}
-          className="shrink-0"
+          className="shrink-0 mt-0.5"
         >
           <TranslationStatus status={translation.status} />
         </button>

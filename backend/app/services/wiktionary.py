@@ -72,34 +72,51 @@ class WiktionaryService:
     def _parse_german_html(self, html: str) -> WiktionaryInfo:
         result = WiktionaryInfo()
 
-        gender_match = re.search(r'<span[^>]*class="["\'].*?\bgender\b.*?["\']"[^>]*>(.*?)</span>', html, re.DOTALL)
-        if not gender_match:
-            gender_match = re.search(r'\b(der|die|das|den|dem)\b', html, re.IGNORECASE)
+        gender_patterns = [
+            r'<span[^>]*class="[^"]*\bgender\b[^"]*"[^>]*>([^<]+)</span>',
+            r'class="gender[^"]*">([^<]+)<',
+            r'<div[^>]*class="[^"]*\bgender\b[^"]*"[^>]*>\s*([A-Z][a-z]+)',
+        ]
+        
+        for pattern in gender_patterns:
+            gender_match = re.search(pattern, html, re.IGNORECASE)
+            if gender_match:
+                match_text = gender_match.group(1).strip().lower()
+                if match_text in ["m", "f", "n"]:
+                    result.gender = match_text
+                    if match_text == "m":
+                        result.article = "der"
+                    elif match_text == "f":
+                        result.article = "die"
+                    elif match_text == "n":
+                        result.article = "das"
+                elif match_text in ["der", "die", "das"]:
+                    result.article = match_text
+                    if match_text == "der":
+                        result.gender = "m"
+                    elif match_text == "die":
+                        result.gender = "f"
+                    elif match_text == "das":
+                        result.gender = "n"
+                break
+        
+        if not result.article:
+            article_match = re.search(r'\b(der|die|das)\b', html, re.IGNORECASE)
+            if article_match:
+                match_text = article_match.group(1).lower()
+                result.article = match_text
+                if match_text == "der":
+                    result.gender = "m"
+                elif match_text == "die":
+                    result.gender = "f"
+                elif match_text == "das":
+                    result.gender = "n"
 
-        if gender_match:
-            match_text = gender_match.group(1) if hasattr(gender_match, 'group') and gender_match.lastindex else gender_match.group(0)
-            match_text = match_text.lower().strip()
-
-            if match_text in ["der"]:
-                result.article = "der"
-                result.gender = "m"
-            elif match_text in ["die"]:
-                result.article = "die"
-                result.gender = "f"
-            elif match_text in ["das"]:
-                result.article = "das"
-                result.gender = "n"
-
-        noun_match = re.search(r'Noun.*?<dd[^>]*>([^<]+)', html, re.DOTALL | re.IGNORECASE)
-        if noun_match:
+        if re.search(r'Noun</span>', html, re.IGNORECASE):
             result.word_type = "noun"
-
-        verb_match = re.search(r'Verb.*?<dd[^>]*>([^<]+)', html, re.DOTALL | re.IGNORECASE)
-        if verb_match:
+        elif re.search(r'Verb</span>', html, re.IGNORECASE):
             result.word_type = "verb"
-
-        adj_match = re.search(r'Adjective.*?<dd[^>]*>([^<]+)', html, re.DOTALL | re.IGNORECASE)
-        if adj_match:
+        elif re.search(r'Adjective</span>', html, re.IGNORECASE):
             result.word_type = "adj"
 
         if result.article and result.gender:
