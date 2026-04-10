@@ -1,15 +1,33 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { Entry, Translation } from '../../types';
 import { useDictionaryStore } from '../../stores/dictionaryStore';
 import { useAppStore } from '../../stores/appStore';
 import { LANGUAGE_NAMES } from '../../utils/languageUtils';
 import TableCell from './TableCell';
 
+const STORAGE_KEY = 'glossarion_hidden_columns';
+
 export default function DictionaryTable() {
   const { entries, sourceLanguage, targetLanguages, availableLanguages, deleteEntry, autoTranslate, toggleTargetLanguage } = useDictionaryStore();
   const { setShowEntryModal } = useAppStore();
   const [translatingId, setTranslatingId] = useState<string | null>(null);
-  const [hiddenColumns, setHiddenColumns] = useState<Set<string>>(new Set());
+  const [hiddenColumns, setHiddenColumns] = useState<Set<string>>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          return new Set(JSON.parse(saved));
+        } catch {
+          return new Set();
+        }
+      }
+    }
+    return new Set();
+  });
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(hiddenColumns)));
+  }, [hiddenColumns]);
 
   const allLanguages = useMemo(() => {
     const langs = new Set<string>();
