@@ -38,6 +38,7 @@ export default function DictionaryTable() {
   const { entries, sourceLanguage, targetLanguages, availableLanguages, deleteEntry, autoTranslate, toggleTargetLanguage } = useDictionaryStore();
   const { setShowEntryModal } = useAppStore();
   const [translatingId, setTranslatingId] = useState<string | null>(null);
+  const [translateAllProgress, setTranslateAllProgress] = useState<{ current: number; total: number } | null>(null);
   const [hiddenColumns, setHiddenColumns] = useState<Set<string>>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -72,6 +73,13 @@ export default function DictionaryTable() {
 
   const showDate = useMemo(() => !hiddenColumns.has('date'), [hiddenColumns]);
 
+  const entriesNeedingTranslation = useMemo(() => {
+    return entries.filter(entry => {
+      const existingLangs = new Set(entry.translations.map(t => t.language_code));
+      return targetLanguages.some(lang => !existingLangs.has(lang) && lang !== sourceLanguage);
+    });
+  }, [entries, targetLanguages, sourceLanguage]);
+
   const handleAutoTranslate = async (entryId: string) => {
     setTranslatingId(entryId);
     try {
@@ -79,6 +87,20 @@ export default function DictionaryTable() {
     } finally {
       setTranslatingId(null);
     }
+  };
+
+  const handleTranslateAll = async () => {
+    if (entriesNeedingTranslation.length === 0) return;
+    
+    setTranslateAllProgress({ current: 0, total: entriesNeedingTranslation.length });
+    
+    for (let i = 0; i < entriesNeedingTranslation.length; i++) {
+      setTranslateAllProgress({ current: i + 1, total: entriesNeedingTranslation.length });
+      await autoTranslate(entriesNeedingTranslation[i].id);
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    setTranslateAllProgress(null);
   };
 
   const toggleColumn = (columnId: string) => {
@@ -115,42 +137,99 @@ export default function DictionaryTable() {
 
   return (
     <div>
-      <div className="mb-4 p-3 bg-slate-800 rounded-lg border border-slate-700">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm text-slate-400">Visible columns:</span>
-          {hiddenColumns.size > 0 && (
-            <button
-              onClick={showAllColumns}
-              className="text-xs text-primary-400 hover:text-primary-300"
-            >
-              Show all
-            </button>
-          )}
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => toggleColumn('date')}
-            className={`px-2 py-1 text-xs rounded transition-colors ${
-              showDate
-                ? 'bg-primary-600 text-white hover:bg-primary-500'
-                : 'bg-slate-700 text-slate-500 hover:bg-slate-600'
-            }`}
-          >
-            📅 Date
-          </button>
-          {allLanguages.map((lang: string) => (
-            <button
-              key={lang}
-              onClick={() => toggleColumn(`lang_${lang}`)}
-              className={`px-2 py-1 text-xs rounded transition-colors ${
-                !hiddenColumns.has(`lang_${lang}`)
-                  ? 'bg-primary-600 text-white hover:bg-primary-500'
-                  : 'bg-slate-700 text-slate-500 hover:bg-slate-600'
-              }`}
-            >
-              {lang.toUpperCase()} ({LANGUAGE_NAMES[lang]?.slice(0, 3)})
-            </button>
-          ))}
+      <div className="mb-4 p-4 bg-slate-800/50 rounded-xl border border-slate-700/50 backdrop-blur">
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-slate-300">Auto-translate:</span>
+                <div className="flex items-center gap-2">
+                  {allLanguages.map((lang: string) => (
+                    <button
+                      key={lang}
+                      onClick={() => toggleTargetLanguage(lang)}
+                      className={`relative px-2.5 py-1 text-xs rounded-full transition-all duration-200 ${
+                        targetLanguages.includes(lang)
+                          ? 'bg-purple-600/80 text-white shadow-lg shadow-purple-500/30 hover:bg-purple-500'
+                          : 'bg-slate-700/50 text-slate-500 hover:bg-slate-700 hover:text-slate-400'
+                      }`}
+                    >
+                      {lang.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              {entriesNeedingTranslation.length > 0 && !translateAllProgress && (
+                <button
+                  onClick={handleTranslateAll}
+                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white text-sm font-medium rounded-lg shadow-lg shadow-purple-500/30 transition-all duration-200"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  Translate All ({entriesNeedingTranslation.length})
+                </button>
+              )}
+              {translateAllProgress && (
+                <div className="flex items-center gap-3 px-4 py-2 bg-slate-700/50 rounded-lg">
+                  <svg className="w-5 h-5 animate-spin text-purple-400" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                  </svg>
+                  <span className="text-sm text-slate-300">
+                    Translating {translateAllProgress.current}/{translateAllProgress.total}
+                  </span>
+                  <div className="w-24 h-2 bg-slate-600 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300"
+                      style={{ width: `${(translateAllProgress.current / translateAllProgress.total) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <div className="flex items-center justify-between pt-3 border-t border-slate-700/30">
+            <div className="flex items-center gap-4">
+              <span className="text-xs text-slate-500">Show columns:</span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => toggleColumn('date')}
+                  className={`px-2 py-0.5 text-xs rounded transition-colors ${
+                    showDate
+                      ? 'bg-slate-600 text-white'
+                      : 'bg-slate-700/50 text-slate-500 hover:bg-slate-700'
+                  }`}
+                >
+                  📅 Date
+                </button>
+                {allLanguages.map((lang: string) => (
+                  <button
+                    key={lang}
+                    onClick={() => toggleColumn(`lang_${lang}`)}
+                    className={`px-2 py-0.5 text-xs rounded transition-colors ${
+                      !hiddenColumns.has(`lang_${lang}`)
+                        ? 'bg-slate-600 text-white'
+                        : 'bg-slate-700/50 text-slate-500 hover:bg-slate-700'
+                    }`}
+                  >
+                    {lang.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+              {hiddenColumns.size > 0 && (
+                <button
+                  onClick={showAllColumns}
+                  className="text-xs text-purple-400 hover:text-purple-300"
+                >
+                  Show all
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
