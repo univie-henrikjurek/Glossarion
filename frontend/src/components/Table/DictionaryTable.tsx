@@ -10,7 +10,7 @@ const STORAGE_KEY = 'glossarion_hidden_columns';
 function TranslateIcon({ className = '' }: { className?: string }) {
   return (
     <svg 
-      className={`w-4 h-4 ${className}`} 
+      className={`w-5 h-5 ${className}`} 
       fill="none" 
       stroke="currentColor" 
       viewBox="0 0 24 24"
@@ -24,7 +24,7 @@ function GlowTranslateIcon({ active }: { active: boolean }) {
   if (active) {
     return (
       <span className="translate-glow-active relative inline-flex items-center justify-center">
-        <span className="translate-glow-ring absolute w-5 h-5 rounded-full"></span>
+        <span className="translate-glow-ring absolute w-6 h-6 rounded-full"></span>
         <span className="translate-glow-icon relative">
           <TranslateIcon className="text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.9)]" />
         </span>
