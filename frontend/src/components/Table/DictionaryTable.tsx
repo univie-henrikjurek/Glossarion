@@ -23,13 +23,10 @@ function TranslateIcon({ className = '' }: { className?: string }) {
 function GlowTranslateIcon({ active }: { active: boolean }) {
   if (active) {
     return (
-      <span className="relative inline-flex items-center justify-center">
-        <span 
-          className="absolute w-5 h-5 rounded-full bg-purple-500/40 animate-[ping_2s_cubic-bezier(0,0,0.2,1)_infinite]" 
-          style={{ animationDuration: '2s' }}
-        ></span>
-        <span className="relative animate-[pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite]" style={{ animationDuration: '2s' }}>
-          <TranslateIcon className="text-purple-400 drop-shadow-[0_0_6px_rgba(168,85,247,0.9)]" />
+      <span className="translate-glow-active relative inline-flex items-center justify-center">
+        <span className="translate-glow-ring absolute w-5 h-5 rounded-full"></span>
+        <span className="translate-glow-icon relative">
+          <TranslateIcon className="text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.9)]" />
         </span>
       </span>
     );
