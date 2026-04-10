@@ -31,7 +31,7 @@ services:
       LIBRETRANSLATE_URL: http://libretranslate:5000
       CORS_ORIGINS: "*"
       SOURCE_LANGUAGE: en
-      TARGET_LANGUAGES: de,fr,es
+      TARGET_LANGUAGES: en,de,fr,es
     depends_on:
       db:
         condition: service_healthy
