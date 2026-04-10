@@ -152,6 +152,43 @@ export default function DictionaryTable() {
       );
     });
 
+    cols.push(
+      columnHelper.accessor(
+        (row) => row.created_at,
+        {
+          id: 'date',
+          header: () => (
+            <div className="flex items-center gap-2 cursor-pointer select-none" title="Date added">
+              <span className="text-xs text-slate-400">📅</span>
+              <span className="text-xs text-slate-500">Date</span>
+            </div>
+          ),
+          cell: ({ row }) => {
+            const date = new Date(row.original.created_at);
+            const today = new Date();
+            const diffDays = Math.floor((today.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+            
+            let dateStr: string;
+            if (diffDays === 0) {
+              dateStr = 'Today';
+            } else if (diffDays === 1) {
+              dateStr = 'Yesterday';
+            } else if (diffDays < 7) {
+              dateStr = `${diffDays}d ago`;
+            } else {
+              dateStr = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+            }
+            
+            return (
+              <span className="text-xs text-slate-500" title={date.toLocaleString()}>
+                {dateStr}
+              </span>
+            );
+          },
+        }
+      )
+    );
+
     return cols;
   }, [visibleLanguages, sourceLanguage, translatingId, deleteEntry]);
 
@@ -220,6 +257,17 @@ export default function DictionaryTable() {
           )}
         </div>
         <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => toggleLanguage('date')}
+            className={`px-2 py-1 text-xs rounded transition-colors ${
+              hiddenLanguages.has('date')
+                ? 'bg-slate-700 text-slate-500 line-through'
+                : 'bg-primary-600 text-white hover:bg-primary-500'
+            }`}
+            title="Toggle date column"
+          >
+            📅 Date
+          </button>
           {allLanguages.map((lang: string) => (
             <button
               key={lang}
