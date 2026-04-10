@@ -7,6 +7,33 @@ import TableCell from './TableCell';
 
 const STORAGE_KEY = 'glossarion_hidden_columns';
 
+function TranslateIcon({ className = '' }: { className?: string }) {
+  return (
+    <svg 
+      className={`w-4 h-4 ${className}`} 
+      fill="none" 
+      stroke="currentColor" 
+      viewBox="0 0 24 24"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+    </svg>
+  );
+}
+
+function GlowTranslateIcon({ active }: { active: boolean }) {
+  if (active) {
+    return (
+      <span className="relative inline-flex items-center justify-center">
+        <span className="absolute w-6 h-6 rounded-full bg-purple-500/30 animate-ping"></span>
+        <span className="relative">
+          <TranslateIcon className="text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]" />
+        </span>
+      </span>
+    );
+  }
+  return <TranslateIcon className="text-slate-600" />;
+}
+
 export default function DictionaryTable() {
   const { entries, sourceLanguage, targetLanguages, availableLanguages, deleteEntry, autoTranslate, toggleTargetLanguage } = useDictionaryStore();
   const { setShowEntryModal } = useAppStore();
@@ -90,27 +117,6 @@ export default function DictionaryTable() {
     <div>
       <div className="mb-4 p-3 bg-slate-800 rounded-lg border border-slate-700">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm text-slate-400">Auto-translate to:</span>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {availableLanguages.map((lang: string) => (
-            <button
-              key={lang}
-              onClick={() => toggleTargetLanguage(lang)}
-              className={`px-2 py-1 text-xs rounded transition-colors ${
-                targetLanguages.includes(lang)
-                  ? 'bg-primary-600 text-white hover:bg-primary-500'
-                  : 'bg-slate-700 text-slate-500 hover:bg-slate-600'
-              }`}
-            >
-              {lang.toUpperCase()} ({LANGUAGE_NAMES[lang]?.slice(0, 3)})
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="mb-4 p-3 bg-slate-800 rounded-lg border border-slate-700">
-        <div className="flex items-center justify-between mb-2">
           <span className="text-sm text-slate-400">Visible columns:</span>
           {hiddenColumns.size > 0 && (
             <button
@@ -158,12 +164,32 @@ export default function DictionaryTable() {
               <th className="px-4 py-3 text-left text-sm font-semibold text-slate-300 border-b border-slate-700 w-24">
                 Actions
               </th>
-              {visibleLanguages.map((lang: string) => (
-                <th key={lang} className="px-4 py-3 text-left text-sm font-semibold text-slate-300 border-b border-l border-slate-700">
-                  <span className="font-bold">{lang.toUpperCase()}</span>
-                  <span className="ml-2 text-xs text-slate-500">{LANGUAGE_NAMES[lang]?.slice(0, 3)}</span>
-                </th>
-              ))}
+              {visibleLanguages.map((lang: string) => {
+                const isTargetLang = targetLanguages.includes(lang);
+                return (
+                  <th key={lang} className="px-4 py-3 text-left text-sm font-semibold text-slate-300 border-b border-l border-slate-700">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleTargetLanguage(lang);
+                        }}
+                        title={isTargetLang ? 'Click to disable auto-translate' : 'Click to enable auto-translate'}
+                        className="p-0.5 rounded hover:bg-slate-700/50 transition-colors"
+                      >
+                        <GlowTranslateIcon active={isTargetLang} />
+                      </button>
+                      <button
+                        onClick={() => toggleColumn(`lang_${lang}`)}
+                        className="hover:text-primary-400 transition-colors cursor-pointer"
+                      >
+                        <span className="font-bold">{lang.toUpperCase()}</span>
+                        <span className="ml-1 text-xs text-slate-500">{LANGUAGE_NAMES[lang]?.slice(0, 3)}</span>
+                      </button>
+                    </div>
+                  </th>
+                );
+              })}
               {showDate && (
                 <th className="px-4 py-3 text-left text-sm font-semibold text-slate-300 border-b border-l border-slate-700 w-20">
                   <span className="text-xs text-slate-500">Date</span>
