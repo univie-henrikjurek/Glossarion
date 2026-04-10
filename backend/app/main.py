@@ -1,10 +1,10 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.orm import selectinload
 
-from app.database import init_db, AsyncSessionLocal
+from app.database import init_db, AsyncSessionLocal, engine
 from app.models import Entry
 from app.api import entries_router, translations_router
 from app.config import get_settings
@@ -13,9 +13,31 @@ from app.services import TranslatorService
 settings = get_settings()
 
 
+async def run_migrations():
+    async with engine.begin() as conn:
+        await conn.execute(text("""
+            DO $$
+            BEGIN
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'translations' AND column_name = 'word_type') THEN
+                    ALTER TABLE translations ADD COLUMN word_type VARCHAR(20);
+                END IF;
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'translations' AND column_name = 'gender') THEN
+                    ALTER TABLE translations ADD COLUMN gender VARCHAR(10);
+                END IF;
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'translations' AND column_name = 'article') THEN
+                    ALTER TABLE translations ADD COLUMN article VARCHAR(20);
+                END IF;
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'translations' AND column_name = 'grammar_details') THEN
+                    ALTER TABLE translations ADD COLUMN grammar_details JSON;
+                END IF;
+            END $$;
+        """))
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
+    await run_migrations()
     yield
 
 
@@ -81,6 +103,10 @@ async def sync_data():
                             "language_code": t.language_code,
                             "text": t.text,
                             "status": t.status,
+                            "word_type": t.word_type,
+                            "gender": t.gender,
+                            "article": t.article,
+                            "grammar_details": t.grammar_details,
                             "created_at": t.created_at.isoformat(),
                             "updated_at": t.updated_at.isoformat()
                         }
