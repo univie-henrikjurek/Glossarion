@@ -5,7 +5,26 @@ import { useAppStore } from '../../stores/appStore';
 import { LANGUAGE_NAMES } from '../../utils/languageUtils';
 import TableCell from './TableCell';
 
-const STORAGE_KEY = 'glossarion_hidden_columns';
+const HIDDEN_COLS_KEY = 'glossarion_hidden_columns';
+const FILTERS_KEY = 'glossarion_filters';
+
+type SortKey = 'date' | 'language' | 'status';
+type SortDirection = 'asc' | 'desc';
+type CompletenessFilter = 'all' | 'complete' | 'incomplete';
+
+interface FilterState {
+  completeness: CompletenessFilter;
+  selectedTags: string[];
+  maxAgeDays: number | null;
+  wordTypes: string[];
+}
+
+const DEFAULT_FILTERS: FilterState = {
+  completeness: 'all',
+  selectedTags: [],
+  maxAgeDays: null,
+  wordTypes: [],
+};
 
 function TranslateIcon({ className = '' }: { className?: string }) {
   return (
@@ -31,15 +50,22 @@ function GlowTranslateIcon({ active }: { active: boolean }) {
   );
 }
 
+function SortIcon({ direction }: { direction: SortDirection | null }) {
+  if (direction === 'asc') return <span className="ml-1 text-xs">↑</span>;
+  if (direction === 'desc') return <span className="ml-1 text-xs">↓</span>;
+  return <span className="ml-1 text-xs opacity-30">↕</span>;
+}
+
 export default function DictionaryTable() {
   const { entries, sourceLanguage, targetLanguages, availableLanguages, deleteEntry, autoTranslate, toggleTargetLanguage } = useDictionaryStore();
   const { setShowEntryModal } = useAppStore();
   const [translatingId, setTranslatingId] = useState<string | null>(null);
   const [translateAllProgress, setTranslateAllProgress] = useState<{ current: number; total: number } | null>(null);
+  const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection }>({ key: 'date', direction: 'desc' });
   
   const [hiddenColumns, setHiddenColumns] = useState<Set<string>>(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const saved = localStorage.getItem(HIDDEN_COLS_KEY);
       if (saved) {
         try {
           return new Set(JSON.parse(saved));
@@ -51,9 +77,27 @@ export default function DictionaryTable() {
     return new Set();
   });
 
+  const [filters, setFilters] = useState<FilterState>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(FILTERS_KEY);
+      if (saved) {
+        try {
+          return { ...DEFAULT_FILTERS, ...JSON.parse(saved) };
+        } catch {
+          return DEFAULT_FILTERS;
+        }
+      }
+    }
+    return DEFAULT_FILTERS;
+  });
+
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(hiddenColumns)));
+    localStorage.setItem(HIDDEN_COLS_KEY, JSON.stringify(Array.from(hiddenColumns)));
   }, [hiddenColumns]);
+
+  useEffect(() => {
+    localStorage.setItem(FILTERS_KEY, JSON.stringify(filters));
+  }, [filters]);
 
   const allLanguages = useMemo(() => {
     const langs = new Set<string>();
@@ -64,6 +108,12 @@ export default function DictionaryTable() {
     });
     return Array.from(langs).sort();
   }, [entries, sourceLanguage, targetLanguages]);
+
+  const allTags = useMemo(() => {
+    const tags = new Set<string>();
+    entries.forEach(e => (e.tags || []).forEach(t => tags.add(t)));
+    return Array.from(tags).sort();
+  }, [entries]);
 
   const visibleLanguages = useMemo(() => {
     return allLanguages.filter(lang => !hiddenColumns.has(`lang_${lang}`));
@@ -77,6 +127,79 @@ export default function DictionaryTable() {
       return targetLanguages.some(lang => !existingLangs.has(lang) && lang !== sourceLanguage);
     });
   }, [entries, targetLanguages, sourceLanguage]);
+
+  const filteredAndSortedEntries = useMemo(() => {
+    let result = [...entries];
+
+    if (filters.completeness !== 'all') {
+      result = result.filter(entry => {
+        const hasAuto = entry.translations.some(t => t.status === 'auto');
+        const hasUntranslated = targetLanguages.some(lang => 
+          lang !== sourceLanguage && !entry.translations.some(t => t.language_code === lang)
+        );
+        if (filters.completeness === 'complete') {
+          return !hasAuto && !hasUntranslated;
+        }
+        return hasAuto || hasUntranslated;
+      });
+    }
+
+    if (filters.selectedTags.length > 0) {
+      result = result.filter(entry =>
+        filters.selectedTags.some(tag => (entry.tags || []).includes(tag))
+      );
+    }
+
+    if (filters.maxAgeDays !== null) {
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - filters.maxAgeDays);
+      result = result.filter(entry => new Date(entry.created_at) >= cutoff);
+    }
+
+    if (filters.wordTypes.length > 0) {
+      result = result.filter(entry =>
+        entry.translations.some(t => {
+          const wt = t.word_type?.toLowerCase();
+          return filters.wordTypes.some(ft => wt?.includes(ft));
+        })
+      );
+    }
+
+    result.sort((a, b) => {
+      if (sortConfig.key === 'date') {
+        const dateA = new Date(a.created_at).getTime();
+        const dateB = new Date(b.created_at).getTime();
+        return sortConfig.direction === 'asc' ? dateA - dateB : dateB - dateA;
+      }
+      if (sortConfig.key === 'language') {
+        const firstA = a.translations[0]?.language_code || '';
+        const firstB = b.translations[0]?.language_code || '';
+        return sortConfig.direction === 'asc' 
+          ? firstA.localeCompare(firstB) 
+          : firstB.localeCompare(firstA);
+      }
+      if (sortConfig.key === 'status') {
+        const hasAutoA = a.translations.some(t => t.status === 'auto');
+        const hasAutoB = b.translations.some(t => t.status === 'auto');
+        return sortConfig.direction === 'asc' 
+          ? (hasAutoA ? 1 : 0) - (hasAutoB ? 1 : 0)
+          : (hasAutoB ? 1 : 0) - (hasAutoA ? 1 : 0);
+      }
+      return 0;
+    });
+
+    return result;
+  }, [entries, filters, sortConfig, targetLanguages, sourceLanguage]);
+
+  const handleSort = (key: SortKey) => {
+    setSortConfig(prev => {
+      if (prev.key === key) {
+        if (prev.direction === 'desc') return { key, direction: 'asc' };
+        return { key: 'date', direction: 'desc' };
+      }
+      return { key, direction: 'desc' };
+    });
+  };
 
   const handleAutoTranslate = async (entryId: string) => {
     setTranslatingId(entryId);
@@ -114,6 +237,7 @@ export default function DictionaryTable() {
   };
 
   const showAllColumns = () => setHiddenColumns(new Set());
+  const resetFilters = () => setFilters(DEFAULT_FILTERS);
 
   if (entries.length === 0) {
     return (
@@ -142,7 +266,7 @@ export default function DictionaryTable() {
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium text-slate-300">Auto-translate:</span>
                 <div className="flex items-center gap-2">
-{availableLanguages.map((lang: string) => (
+                  {availableLanguages.map((lang: string) => (
                     <button
                       key={lang}
                       onClick={() => toggleTargetLanguage(lang)}
@@ -159,17 +283,20 @@ export default function DictionaryTable() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              {entriesNeedingTranslation.length > 0 && !translateAllProgress && (
-                <button
-                  onClick={handleTranslateAll}
-                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white text-sm font-medium rounded-lg shadow-lg shadow-purple-500/30 transition-all duration-200"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                  Translate All ({entriesNeedingTranslation.length})
-                </button>
-              )}
+              <button
+                onClick={handleTranslateAll}
+                disabled={entriesNeedingTranslation.length === 0 || translateAllProgress !== null}
+                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg shadow-lg shadow-purple-500/30 transition-all duration-200 ${
+                  entriesNeedingTranslation.length > 0
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white'
+                    : 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                Translate All ({entriesNeedingTranslation.length})
+              </button>
               {translateAllProgress && (
                 <div className="flex items-center gap-3 px-4 py-2 bg-slate-700/50 rounded-lg">
                   <svg className="w-5 h-5 animate-spin text-purple-400" fill="none" viewBox="0 0 24 24">
@@ -228,14 +355,98 @@ export default function DictionaryTable() {
               )}
             </div>
           </div>
+
+          <div className="flex items-center justify-between pt-3 border-t border-slate-700/30">
+            <div className="flex items-center gap-4 flex-wrap">
+              <span className="text-xs text-slate-500">Filters:</span>
+              
+              <select
+                value={filters.completeness}
+                onChange={(e) => setFilters(f => ({ ...f, completeness: e.target.value as CompletenessFilter }))}
+                className="px-2 py-1 text-xs bg-slate-700 border border-slate-600 rounded text-slate-300 focus:outline-none focus:border-purple-500"
+              >
+                <option value="all">All items</option>
+                <option value="complete">Only complete</option>
+                <option value="incomplete">Missing translations</option>
+              </select>
+
+              {allTags.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-500">Tags:</span>
+                  <select
+                    value={filters.selectedTags[0] || ''}
+                    onChange={(e) => setFilters(f => ({ 
+                      ...f, 
+                      selectedTags: e.target.value ? [e.target.value] : [] 
+                    }))}
+                    className="px-2 py-1 text-xs bg-slate-700 border border-slate-600 rounded text-slate-300 focus:outline-none focus:border-purple-500"
+                  >
+                    <option value="">All tags</option>
+                    {allTags.map(tag => (
+                      <option key={tag} value={tag}>{tag}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-500">Age:</span>
+                <select
+                  value={filters.maxAgeDays ?? ''}
+                  onChange={(e) => setFilters(f => ({ 
+                    ...f, 
+                    maxAgeDays: e.target.value ? parseInt(e.target.value) : null 
+                  }))}
+                  className="px-2 py-1 text-xs bg-slate-700 border border-slate-600 rounded text-slate-300 focus:outline-none focus:border-purple-500"
+                >
+                  <option value="">Any age</option>
+                  <option value="7">Last 7 days</option>
+                  <option value="30">Last 30 days</option>
+                  <option value="90">Last 90 days</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-500">Type:</span>
+                {['noun', 'verb', 'adj'].map(type => (
+                  <button
+                    key={type}
+                    onClick={() => setFilters(f => ({
+                      ...f,
+                      wordTypes: f.wordTypes.includes(type)
+                        ? f.wordTypes.filter(t => t !== type)
+                        : [...f.wordTypes, type]
+                    }))}
+                    className={`px-2 py-0.5 text-xs rounded transition-colors ${
+                      filters.wordTypes.includes(type)
+                        ? 'bg-purple-600 text-white'
+                        : 'bg-slate-700/50 text-slate-500 hover:bg-slate-700'
+                    }`}
+                  >
+                    {type}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {(filters.completeness !== 'all' || filters.selectedTags.length > 0 || filters.maxAgeDays !== null || filters.wordTypes.length > 0) && (
+              <button
+                onClick={resetFilters}
+                className="text-xs text-purple-400 hover:text-purple-300"
+              >
+                Reset filters
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
+      <div className="mb-2 px-2 text-xs text-slate-500">
+        Showing {filteredAndSortedEntries.length} of {entries.length} entries
+      </div>
+
       <div className="overflow-x-auto border border-slate-700 rounded-lg">
-        <table 
-          className="w-full"
-          key={`table-${Array.from(hiddenColumns).sort().join('-')}`}
-        >
+        <table className="w-full">
           <thead className="bg-slate-800">
             <tr>
               <th className="px-4 py-3 text-left text-sm font-semibold text-slate-300 border-b border-slate-700 w-24">
@@ -268,14 +479,18 @@ export default function DictionaryTable() {
                 );
               })}
               {showDate && (
-                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-300 border-b border-l border-slate-700 w-20">
+                <th 
+                  className="px-4 py-3 text-left text-sm font-semibold text-slate-300 border-b border-l border-slate-700 w-20 cursor-pointer hover:text-purple-400"
+                  onClick={() => handleSort('date')}
+                >
                   <span className="text-xs text-slate-500">Date</span>
+                  <SortIcon direction={sortConfig.key === 'date' ? sortConfig.direction : null} />
                 </th>
               )}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-700">
-            {entries.map((entry: Entry) => (
+            {filteredAndSortedEntries.map((entry: Entry) => (
               <tr key={entry.id} className="hover:bg-slate-800/50">
                 <td className="px-4 py-2 border-r border-slate-700">
                   <div className="flex items-center gap-2">

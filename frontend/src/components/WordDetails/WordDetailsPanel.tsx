@@ -20,6 +20,10 @@ export default function WordDetailsPanel() {
   const [tags, setTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState('');
   const [context, setContext] = useState('');
+  const [editingGrammar, setEditingGrammar] = useState(false);
+  const [editWordType, setEditWordType] = useState('');
+  const [editGender, setEditGender] = useState('');
+  const [editArticle, setEditArticle] = useState('');
 
   useEffect(() => {
     if (wordDetails?.entry) {
@@ -266,33 +270,121 @@ export default function WordDetailsPanel() {
                 </div>
               </section>
 
-              {translation.word_type || translation.gender || translation.article ? (
-                <section>
-                  <h3 className="text-sm font-medium text-slate-300 mb-3 flex items-center gap-2">
+              <section>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-medium text-slate-300 flex items-center gap-2">
                     <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
                     </svg>
                     Grammar
                   </h3>
+                  <button
+                    onClick={() => {
+                      if (editingGrammar) {
+                        setEditingGrammar(false);
+                      } else {
+                        setEditWordType(translation?.word_type || '');
+                        setEditGender(translation?.gender || '');
+                        setEditArticle(translation?.article || '');
+                        setEditingGrammar(true);
+                      }
+                    }}
+                    className="text-xs text-purple-400 hover:text-purple-300"
+                  >
+                    {editingGrammar ? 'Cancel' : 'Edit'}
+                  </button>
+                </div>
+                {editingGrammar ? (
+                  <div className="space-y-2 bg-slate-700/50 rounded-lg p-3">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={editWordType}
+                        onChange={(e) => setEditWordType(e.target.value)}
+                        placeholder="word type (noun, verb, adj...)"
+                        className="flex-1 px-2 py-1 bg-slate-600 border border-slate-500 rounded text-white text-sm focus:outline-none focus:border-purple-500"
+                      />
+                      <button
+                        onClick={async () => {
+                          if (translation) {
+                            await updateTranslation(translation.id, { word_type: editWordType || undefined });
+                            setEditingGrammar(false);
+                          }
+                        }}
+                        className="px-3 py-1 bg-purple-600 hover:bg-purple-500 text-white text-sm rounded"
+                      >
+                        Save
+                      </button>
+                    </div>
+                    <div className="flex gap-2">
+                      <select
+                        value={editGender}
+                        onChange={(e) => setEditGender(e.target.value)}
+                        className="flex-1 px-2 py-1 bg-slate-600 border border-slate-500 rounded text-white text-sm focus:outline-none focus:border-purple-500"
+                      >
+                        <option value="">No gender</option>
+                        <option value="m">Masculine (m)</option>
+                        <option value="f">Feminine (f)</option>
+                        <option value="n">Neuter (n)</option>
+                      </select>
+                      <button
+                        onClick={async () => {
+                          if (translation) {
+                            await updateTranslation(translation.id, { gender: editGender || undefined });
+                          }
+                        }}
+                        className="px-3 py-1 bg-purple-600 hover:bg-purple-500 text-white text-sm rounded"
+                      >
+                        Save
+                      </button>
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={editArticle}
+                        onChange={(e) => setEditArticle(e.target.value)}
+                        placeholder="article (der, die, das...)"
+                        className="flex-1 px-2 py-1 bg-slate-600 border border-slate-500 rounded text-white text-sm focus:outline-none focus:border-purple-500"
+                      />
+                      <button
+                        onClick={async () => {
+                          if (translation) {
+                            await updateTranslation(translation.id, { article: editArticle || undefined });
+                            setEditingGrammar(false);
+                          }
+                        }}
+                        className="px-3 py-1 bg-purple-600 hover:bg-purple-500 text-white text-sm rounded"
+                      >
+                        Save
+                      </button>
+                    </div>
+                  </div>
+                ) : (
                   <div className="flex flex-wrap gap-2">
-                    {translation.article && (
-                      <span className="px-3 py-1.5 bg-slate-700 rounded-lg text-slate-300 text-sm font-mono">
-                        {translation.article}
-                      </span>
-                    )}
-                    {translation.gender && (
-                      <span className="px-3 py-1.5 bg-slate-700 rounded-lg text-slate-300 text-sm font-mono">
-                        {translation.gender === 'm' ? 'masculine' : translation.gender === 'f' ? 'feminine' : 'neuter'}
-                      </span>
-                    )}
-                    {translation.word_type && (
-                      <span className="px-3 py-1.5 bg-slate-700 rounded-lg text-slate-300 text-sm">
-                        {translation.word_type}
-                      </span>
+                    {!translation?.article && !translation?.gender && !translation?.word_type ? (
+                      <span className="text-slate-500 text-sm italic">No grammar info</span>
+                    ) : (
+                      <>
+                        {translation?.article && (
+                          <span className="px-3 py-1.5 bg-slate-700 rounded-lg text-slate-300 text-sm font-mono">
+                            {translation.article}
+                          </span>
+                        )}
+                        {translation?.gender && (
+                          <span className="px-3 py-1.5 bg-slate-700 rounded-lg text-slate-300 text-sm font-mono">
+                            {translation.gender === 'm' ? 'masculine' : translation.gender === 'f' ? 'feminine' : 'neuter'}
+                          </span>
+                        )}
+                        {translation?.word_type && (
+                          <span className="px-3 py-1.5 bg-slate-700 rounded-lg text-slate-300 text-sm">
+                            {translation.word_type}
+                          </span>
+                        )}
+                      </>
                     )}
                   </div>
-                </section>
-              ) : null}
+                )}
+              </section>
 
               <section>
                 <h3 className="text-sm font-medium text-slate-300 mb-3 flex items-center gap-2">
