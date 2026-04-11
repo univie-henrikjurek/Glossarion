@@ -210,7 +210,7 @@ export default function DictionaryTable() {
     });
 
     return result;
-  }, [entries, filters, sortConfig, targetLanguages, sourceLanguage]);
+  }, [entries, filters, sortConfig, searchQuery, targetLanguages, sourceLanguage]);
 
   const handleSort = (key: SortKey) => {
     setSortConfig(prev => {
