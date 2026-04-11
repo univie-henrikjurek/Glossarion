@@ -8,9 +8,16 @@ import TableCell from './TableCell';
 const HIDDEN_COLS_KEY = 'glossarion_hidden_columns';
 const FILTERS_KEY = 'glossarion_filters';
 
-type SortKey = 'date' | 'language' | 'status';
+type SortKey = 'date' | 'status' | string;
 type SortDirection = 'asc' | 'desc';
 type CompletenessFilter = 'all' | 'complete' | 'incomplete';
+
+const normalizeText = (text: string): string => {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+};
 
 interface FilterState {
   completeness: CompletenessFilter;
@@ -91,6 +98,8 @@ export default function DictionaryTable() {
     return DEFAULT_FILTERS;
   });
 
+  const [searchQuery, setSearchQuery] = useState('');
+
   useEffect(() => {
     localStorage.setItem(HIDDEN_COLS_KEY, JSON.stringify(Array.from(hiddenColumns)));
   }, [hiddenColumns]);
@@ -165,18 +174,26 @@ export default function DictionaryTable() {
       );
     }
 
+    if (searchQuery.trim()) {
+      const query = normalizeText(searchQuery.trim());
+      const wildcardMatch = query.includes('*');
+      result = result.filter(entry =>
+        entry.translations.some(t => {
+          const text = normalizeText(t.text || '');
+          if (wildcardMatch) {
+            const regex = new RegExp('^' + query.replace(/\*/g, '.*') + '$', 'i');
+            return regex.test(text);
+          }
+          return text.includes(query);
+        })
+      );
+    }
+
     result.sort((a, b) => {
       if (sortConfig.key === 'date') {
         const dateA = new Date(a.created_at).getTime();
         const dateB = new Date(b.created_at).getTime();
         return sortConfig.direction === 'asc' ? dateA - dateB : dateB - dateA;
-      }
-      if (sortConfig.key === 'language') {
-        const sourceA = a.translations.find(t => t.language_code === sourceLanguage)?.text?.toLowerCase() || '';
-        const sourceB = b.translations.find(t => t.language_code === sourceLanguage)?.text?.toLowerCase() || '';
-        return sortConfig.direction === 'asc' 
-          ? sourceA.localeCompare(sourceB) 
-          : sourceB.localeCompare(sourceA);
       }
       if (sortConfig.key === 'status') {
         const hasAutoA = a.translations.some(t => t.status === 'auto');
@@ -185,7 +202,11 @@ export default function DictionaryTable() {
           ? (hasAutoA ? 1 : 0) - (hasAutoB ? 1 : 0)
           : (hasAutoB ? 1 : 0) - (hasAutoA ? 1 : 0);
       }
-      return 0;
+      const textA = a.translations.find(t => t.language_code === sortConfig.key)?.text?.toLowerCase() || '';
+      const textB = b.translations.find(t => t.language_code === sortConfig.key)?.text?.toLowerCase() || '';
+      return sortConfig.direction === 'asc' 
+        ? textA.localeCompare(textB) 
+        : textB.localeCompare(textA);
     });
 
     return result;
@@ -313,6 +334,29 @@ export default function DictionaryTable() {
                     />
                   </div>
                 </div>
+              )}
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-4 pt-3 border-t border-slate-700/30">
+            <div className="relative flex-1 max-w-xs">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search... (* for wildcard)"
+                className="w-full px-3 py-1.5 pl-8 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:border-purple-500"
+              />
+              <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                >
+                  ×
+                </button>
               )}
             </div>
           </div>
@@ -457,6 +501,7 @@ export default function DictionaryTable() {
               </th>
               {visibleLanguages.map((lang: string) => {
                 const isTargetLang = targetLanguages.includes(lang);
+                const isSorted = sortConfig.key === lang;
                 return (
                   <th key={lang} className="px-4 py-3 text-left text-sm font-semibold text-slate-300 border-b border-l border-slate-700">
                     <div className="flex items-center gap-2">
@@ -471,13 +516,13 @@ export default function DictionaryTable() {
                         <GlowTranslateIcon active={isTargetLang} />
                       </button>
                       <button
-                        onClick={() => handleSort('language')}
-                        className="flex items-center gap-1 hover:text-primary-400 transition-colors cursor-pointer"
-                        title="Sort by language"
+                        onClick={() => handleSort(lang)}
+                        className={`flex items-center gap-1 transition-colors cursor-pointer ${isSorted ? 'text-purple-400' : 'hover:text-primary-400'}`}
+                        title={`Sort by ${lang.toUpperCase()}`}
                       >
                         <span className="font-bold">{lang.toUpperCase()}</span>
                         <span className="text-xs text-slate-500">{LANGUAGE_NAMES[lang]?.slice(0, 3)}</span>
-                        <SortIcon direction={sortConfig.key === 'language' ? sortConfig.direction : null} />
+                        {isSorted && <SortIcon direction={sortConfig.direction} />}
                       </button>
                     </div>
                   </th>
