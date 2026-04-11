@@ -446,7 +446,10 @@ export default function DictionaryTable() {
       </div>
 
       <div className="overflow-x-auto border border-slate-700 rounded-lg">
-        <table className="w-full">
+        <table 
+          className="w-full"
+          key={`table-${visibleLanguages.sort().join('-')}-${showDate}`}
+        >
           <thead className="bg-slate-800">
             <tr>
               <th className="px-4 py-3 text-left text-sm font-semibold text-slate-300 border-b border-slate-700 w-24">
@@ -468,11 +471,13 @@ export default function DictionaryTable() {
                         <GlowTranslateIcon active={isTargetLang} />
                       </button>
                       <button
-                        onClick={() => toggleColumn(`lang_${lang}`)}
-                        className="hover:text-primary-400 transition-colors cursor-pointer"
+                        onClick={() => handleSort('language')}
+                        className="flex items-center gap-1 hover:text-primary-400 transition-colors cursor-pointer"
+                        title="Sort by language"
                       >
                         <span className="font-bold">{lang.toUpperCase()}</span>
-                        <span className="ml-1 text-xs text-slate-500">{LANGUAGE_NAMES[lang]?.slice(0, 3)}</span>
+                        <span className="text-xs text-slate-500">{LANGUAGE_NAMES[lang]?.slice(0, 3)}</span>
+                        <SortIcon direction={sortConfig.key === 'language' ? sortConfig.direction : null} />
                       </button>
                     </div>
                   </th>
@@ -483,8 +488,10 @@ export default function DictionaryTable() {
                   className="px-4 py-3 text-left text-sm font-semibold text-slate-300 border-b border-l border-slate-700 w-20 cursor-pointer hover:text-purple-400"
                   onClick={() => handleSort('date')}
                 >
-                  <span className="text-xs text-slate-500">Date</span>
-                  <SortIcon direction={sortConfig.key === 'date' ? sortConfig.direction : null} />
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-slate-500">Date</span>
+                    <SortIcon direction={sortConfig.key === 'date' ? sortConfig.direction : null} />
+                  </div>
                 </th>
               )}
             </tr>
