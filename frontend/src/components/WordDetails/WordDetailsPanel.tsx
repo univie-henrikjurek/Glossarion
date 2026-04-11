@@ -60,13 +60,43 @@ export default function WordDetailsPanel() {
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
     
+    const IPA_CHARS = /[ɛɔəʊɪæɑŋçθðʃʒŋʔʰˈˌːʊ̯ɚɝɜɤɨɯʉøɵœɶɐäöüßàáèéìíòóùúâêîôûãẽĩõũ]|[a-zA-Z][ˈˌː]|[a-zA-Z][̯̤̩̪]/;
+    
     const isValidIPA = (text: string): boolean => {
       const clean = text.replace(/[\[\]\/]/g, '');
-      if (clean.length < 2 || clean.length > 30) return false;
-      const hasIPAChars = /[ɛɔəʊɪæɑŋçθðʃʒŋ|]/.test(clean);
-      const hasDiacritics = /[ːˈˌ]/.test(clean);
-      const isNotJustEnglish = !/^[a-zA-Z]+$/.test(clean) || hasIPAChars || hasDiacritics;
-      return isNotJustEnglish && /[a-zA-Z]/.test(clean);
+      if (clean.length < 2 || clean.length > 35) return false;
+      return IPA_CHARS.test(clean);
+    };
+    
+    const findIPAInSection = (sectionHtml: string): string | null => {
+      const ipaMatches = sectionHtml.match(/[\/\[][^\]\[]+[\/\]]/g) || [];
+      for (const match of ipaMatches) {
+        const cleaned = match.replace(/[\[\]\/]/g, '');
+        if (isValidIPA(cleaned)) {
+          return cleaned;
+        }
+      }
+      return null;
+    };
+    
+    const findIPAInTable = (table: Element): string | null => {
+      const rows = table.querySelectorAll('tr');
+      for (const row of rows) {
+        const cells = row.querySelectorAll('td, th');
+        for (const cell of cells) {
+          const text = cell.textContent || '';
+          if (IPA_CHARS.test(text) && (text.includes('/') || text.includes('['))) {
+            const match = text.match(/[\/\[][^\]\[]+[\/\]]/);
+            if (match) {
+              const cleaned = match[0].replace(/[\[\]\/]/g, '');
+              if (isValidIPA(cleaned)) {
+                return cleaned;
+              }
+            }
+          }
+        }
+      }
+      return null;
     };
     
     const headers = doc.querySelectorAll('h2, h3, h4, h5');
@@ -74,37 +104,50 @@ export default function WordDetailsPanel() {
       const text = header.textContent?.toLowerCase() || '';
       if (text.includes('pron') || text.includes('aussprache') || text.includes('pronuncia') || text.includes('prononciation')) {
         let sibling = header.nextElementSibling;
-        let sectionText = '';
+        let sectionHtml = '';
         while (sibling && !['H2', 'H3', 'H4', 'H5'].includes(sibling.tagName)) {
-          sectionText += ' ' + (sibling.textContent || '');
+          sectionHtml += ' ' + sibling.innerHTML;
           sibling = sibling.nextElementSibling;
         }
         
-        const allIPA = sectionText.match(/[\/\[][^\]\[]+[\/\]]/g) || [];
-        for (const match of allIPA) {
-          const cleaned = match.replace(/[\[\]\/]/g, '');
-          if (isValidIPA(cleaned)) {
-            data.pronunciation = cleaned;
-            break;
+        let ipa = findIPAInSection(sectionHtml);
+        if (!ipa) {
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = sectionHtml;
+          const tables = tempDiv.querySelectorAll('table');
+          for (const table of tables) {
+            ipa = findIPAInTable(table);
+            if (ipa) break;
           }
         }
-        if (data.pronunciation) break;
+        
+        if (ipa) {
+          data.pronunciation = ipa;
+          break;
+        }
       }
+      if (data.pronunciation) break;
     }
     
     const ddElements = doc.querySelectorAll('dd');
     const examples: string[] = [];
     for (const dd of ddElements) {
       const text = dd.textContent?.trim() || '';
-      const isValidExample = text.length > 20 && text.length < 200 &&
+      
+      const isTranslationTable = /^[a-zA-Z]+:\s*[a-zA-Z]+(\s+[a-zA-Z]+:\s*[a-zA-Z]+)+$/;
+      const isValidExample = text.length > 25 && text.length < 300 &&
+        !isTranslationTable.test(text) &&
         !text.includes('Synonym') && !text.includes('Traduktion') &&
         !text.includes('Traduzione') && !text.includes('Traduction') &&
         !text.includes('Hinweis') && !text.includes('Siehe auch') &&
-        !text.includes('Wiktionary') && !text.includes('Wikipedia');
+        !text.includes('Wiktionary') && !text.includes('Wikipedia') &&
+        !text.includes(' IPA:') && !text.includes('Hörbeispiele') &&
+        !text.includes('siehe auch') && !text.includes('Siehe auch');
       
       if (isValidExample) {
         const cleaned = text.replace(/\s+/g, ' ').trim();
-        if (!examples.includes(cleaned) && cleaned.split(' ').length >= 3) {
+        const wordCount = cleaned.split(/\s+/).filter(w => w.length > 0).length;
+        if (!examples.includes(cleaned) && wordCount >= 4) {
           examples.push(cleaned);
         }
       }
