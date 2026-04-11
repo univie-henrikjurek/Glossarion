@@ -271,9 +271,19 @@ export default function DictionaryTable() {
     const entry = entries.find(e => e.id === entryId);
     if (!entry) return;
     
-    const hasVerified = entry.translations.some(t => t.status === 'verified');
-    const sourceTranslation = entry.translations.find(t => t.language_code === sourceLanguage);
-    const entryText = sourceTranslation?.text || 'this entry';
+    const verifiedTranslations = entry.translations.filter(t => t.status === 'verified');
+    const hasVerified = verifiedTranslations.length > 0;
+    
+    let entryText = 'this entry';
+    if (verifiedTranslations.length > 0) {
+      entryText = `"${verifiedTranslations[0].text}"`;
+      if (verifiedTranslations.length > 1) {
+        entryText += ` und ${verifiedTranslations.length - 1} weitere`;
+      }
+    } else {
+      const sourceTranslation = entry.translations.find(t => t.language_code === sourceLanguage);
+      entryText = sourceTranslation?.text || 'this entry';
+    }
     
     setDeleteConfirm({ entryId, entryText, hasVerified });
   };
