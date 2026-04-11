@@ -57,43 +57,68 @@ export default function WordDetailsPanel() {
   const parseWiktionaryHtml = (html: string, lang: string): WiktionaryData => {
     const data: WiktionaryData = {};
     
-    const cleanHtml = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
     
-    const ipaPatterns = [
-      /\/([\wːʊəɛäöüßŋç]+)\//g,
-      /\[([\wːʊəɛäöüßŋç]+)\]/g,
-    ];
+    const pronSection = doc.querySelector('h2, h3, h4')?.textContent?.toLowerCase().includes('pron') ||
+                        doc.querySelector('h2, h3, h4')?.textContent?.toLowerCase().includes('aussprache') ||
+                        doc.querySelector('h2, h3, h4')?.textContent?.toLowerCase().includes('pronuncia')
+      ? doc : null;
     
-    for (const pattern of ipaPatterns) {
-      const matches = cleanHtml.match(pattern);
-      if (matches && matches.length > 0) {
-        data.pronunciation = matches[0].replace(/[\[\]\/]/g, '');
-        if (data.pronunciation.length < 30) break;
-      }
-    }
-    
-    if (!data.pronunciation) {
-      const pronunciationMatch = cleanHtml.match(/\/([^\/]+)\//);
-      if (pronunciationMatch) {
-        data.pronunciation = pronunciationMatch[1];
-      }
-    }
-
-    const exampleDdMatches = html.match(/<dd[^>]*>([^<]*(?:<[^>]+>[^<]*)*)<\/dd>/gi);
-    if (exampleDdMatches) {
-      const examples: string[] = [];
-      for (const match of exampleDdMatches) {
-        const cleaned = match
-          .replace(/<[^>]+>/g, ' ')
-          .replace(/\s+/g, ' ')
-          .trim();
-        if (cleaned.length > 15 && cleaned.length < 250 && !cleaned.startsWith('[')) {
-          examples.push(cleaned);
+    const extractIPA = (element: Element | null): string | null => {
+      if (!element) return null;
+      
+      const ipaSpans = element.querySelectorAll('.IPA, [lang], .lang-la');
+      for (const span of ipaSpans) {
+        const text = span.textContent?.trim() || '';
+        if (text.startsWith('/') && text.endsWith('/')) {
+          return text;
         }
-        if (examples.length >= 3) break;
+        if (text.startsWith('[') && text.endsWith(']')) {
+          return text;
+        }
       }
-      data.examples = examples;
+      
+      const allText = element.textContent || '';
+      const ipaMatch = allText.match(/[\/\[][\wːʊəɛäöüßŋç\'\-]+[\/\]]/);
+      if (ipaMatch) {
+        return ipaMatch[0];
+      }
+      
+      return null;
+    };
+    
+    const headers = doc.querySelectorAll('h2, h3, h4, h5');
+    for (const header of headers) {
+      const text = header.textContent?.toLowerCase() || '';
+      if (text.includes('pron') || text.includes('aussprache') || text.includes('pronuncia') || text.includes('prononciation')) {
+        let sibling = header.nextElementSibling;
+        let sectionText = '';
+        while (sibling && !['H2', 'H3', 'H4', 'H5'].includes(sibling.tagName)) {
+          sectionText += ' ' + (sibling.textContent || '');
+          sibling = sibling.nextElementSibling;
+        }
+        
+        const sectionIpa = sectionText.match(/[\/\[][\wːʊəɛäöüßŋç\'\-]+[\/\]]/);
+        if (sectionIpa) {
+          data.pronunciation = sectionIpa[0].replace(/[\[\]\/]/g, '');
+          break;
+        }
+      }
     }
+    
+    const ddElements = doc.querySelectorAll('dd');
+    const examples: string[] = [];
+    for (const dd of ddElements) {
+      const text = dd.textContent?.trim() || '';
+      if (text.length > 15 && text.length < 150 && !text.includes('Synonyme') && !text.includes('Synonym') && !text.includes('Traduction')) {
+        if (examples.length === 0 || !examples.includes(text)) {
+          examples.push(text);
+        }
+      }
+      if (examples.length >= 3) break;
+    }
+    data.examples = examples.length > 0 ? examples : undefined;
 
     return data;
   };
