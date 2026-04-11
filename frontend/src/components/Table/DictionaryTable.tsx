@@ -63,12 +63,19 @@ function SortIcon({ direction }: { direction: SortDirection | null }) {
   return <span className="ml-1 text-xs opacity-30">↕</span>;
 }
 
+interface DeleteConfirmState {
+  entryId: string | null;
+  entryText: string;
+  hasVerified: boolean;
+}
+
 export default function DictionaryTable() {
   const { entries, sourceLanguage, targetLanguages, availableLanguages, deleteEntry, autoTranslate, toggleTargetLanguage } = useDictionaryStore();
   const { setShowEntryModal } = useAppStore();
   const [translatingId, setTranslatingId] = useState<string | null>(null);
   const [translateAllProgress, setTranslateAllProgress] = useState<{ current: number; total: number } | null>(null);
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection }>({ key: 'date', direction: 'desc' });
+  const [deleteConfirm, setDeleteConfirm] = useState<DeleteConfirmState>({ entryId: null, entryText: '', hasVerified: false });
   
   const [hiddenColumns, setHiddenColumns] = useState<Set<string>>(() => {
     if (typeof window !== 'undefined') {
@@ -259,6 +266,28 @@ export default function DictionaryTable() {
 
   const showAllColumns = () => setHiddenColumns(new Set());
   const resetFilters = () => setFilters(DEFAULT_FILTERS);
+
+  const handleDeleteClick = (entryId: string) => {
+    const entry = entries.find(e => e.id === entryId);
+    if (!entry) return;
+    
+    const hasVerified = entry.translations.some(t => t.status === 'verified');
+    const sourceTranslation = entry.translations.find(t => t.language_code === sourceLanguage);
+    const entryText = sourceTranslation?.text || 'this entry';
+    
+    setDeleteConfirm({ entryId, entryText, hasVerified });
+  };
+
+  const confirmDelete = () => {
+    if (deleteConfirm.entryId) {
+      deleteEntry(deleteConfirm.entryId);
+      setDeleteConfirm({ entryId: null, entryText: '', hasVerified: false });
+    }
+  };
+
+  const cancelDelete = () => {
+    setDeleteConfirm({ entryId: null, entryText: '', hasVerified: false });
+  };
 
   if (entries.length === 0) {
     return (
@@ -564,7 +593,7 @@ export default function DictionaryTable() {
                       )}
                     </button>
                     <button
-                      onClick={() => deleteEntry(entry.id)}
+                      onClick={() => handleDeleteClick(entry.id)}
                       className="p-1 text-slate-400 hover:text-red-400"
                       title="Delete"
                     >
@@ -608,6 +637,58 @@ export default function DictionaryTable() {
           </tbody>
         </table>
       </div>
+
+      {deleteConfirm.entryId && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 max-w-sm w-full mx-4 shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className={`p-2 rounded-full ${deleteConfirm.hasVerified ? 'bg-amber-600/20' : 'bg-red-600/20'}`}>
+                <svg className={`w-6 h-6 ${deleteConfirm.hasVerified ? 'text-amber-500' : 'text-red-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-white">Delete Entry</h3>
+            </div>
+            
+            {deleteConfirm.hasVerified ? (
+              <div className="mb-6">
+                <p className="text-slate-300 mb-2">
+                  Are you sure you want to delete <span className="font-semibold text-white">"{deleteConfirm.entryText}"</span>?
+                </p>
+                <p className="text-amber-400 text-sm flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  This entry contains verified translations that will be lost.
+                </p>
+              </div>
+            ) : (
+              <p className="text-slate-300 mb-6">
+                Are you sure you want to delete <span className="font-semibold text-white">"{deleteConfirm.entryText}"</span>?
+              </p>
+            )}
+            
+            <div className="flex gap-3">
+              <button
+                onClick={cancelDelete}
+                className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className={`flex-1 px-4 py-2 text-white rounded-lg font-medium transition-colors ${
+                  deleteConfirm.hasVerified 
+                    ? 'bg-red-600 hover:bg-red-500' 
+                    : 'bg-slate-600 hover:bg-slate-500'
+                }`}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
