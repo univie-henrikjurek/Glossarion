@@ -118,12 +118,12 @@ export default function DictionaryTable() {
   const allLanguages = useMemo(() => {
     const langs = new Set<string>();
     langs.add(sourceLanguage);
-    targetLanguages.forEach(l => langs.add(l));
+    availableLanguages.forEach(l => langs.add(l));
     entries.forEach((e: Entry) => {
       e.translations.forEach((t: Translation) => langs.add(t.language_code));
     });
     return Array.from(langs).sort();
-  }, [entries, sourceLanguage, targetLanguages]);
+  }, [entries, sourceLanguage, availableLanguages]);
 
   const allTags = useMemo(() => {
     const tags = new Set<string>();
