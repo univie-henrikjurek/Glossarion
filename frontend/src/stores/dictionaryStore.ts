@@ -155,11 +155,17 @@ export const useDictionaryStore = create<DictionaryState>()(
   },
 
   setTargetLanguages: (langs: string[]) => {
-    set({ targetLanguages: langs });
+    const available = get().availableLanguages;
+    const filtered = langs.filter(l => available.includes(l));
+    set({ targetLanguages: filtered });
   },
 
   toggleTargetLanguage: (lang: string) => {
     const current = get().targetLanguages;
+    const available = get().availableLanguages;
+    
+    if (!available.includes(lang)) return;
+    
     if (current.includes(lang)) {
       if (current.length > 1) {
         set({ targetLanguages: current.filter(l => l !== lang) });

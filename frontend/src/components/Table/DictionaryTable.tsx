@@ -131,6 +131,14 @@ export default function DictionaryTable() {
     return Array.from(tags).sort();
   }, [entries]);
 
+  const usedLanguages = useMemo(() => {
+    const langs = new Set<string>();
+    entries.forEach((e: Entry) => {
+      e.translations.forEach((t: Translation) => langs.add(t.language_code));
+    });
+    return Array.from(langs).sort();
+  }, [entries]);
+
   const visibleLanguages = useMemo(() => {
     return allLanguages.filter(lang => !hiddenColumns.has(`lang_${lang}`));
   }, [allLanguages, hiddenColumns]);
@@ -326,7 +334,7 @@ export default function DictionaryTable() {
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium text-slate-300">Auto-translate:</span>
                 <div className="flex items-center gap-2">
-                  {availableLanguages.map((lang: string) => (
+                  {usedLanguages.map((lang: string) => (
                     <button
                       key={lang}
                       onClick={() => toggleTargetLanguage(lang)}
