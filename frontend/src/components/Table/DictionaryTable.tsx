@@ -583,6 +583,7 @@ export default function DictionaryTable() {
                         translation={translation}
                         languageCode={lang}
                         isSource={lang === sourceLanguage}
+                        searchQuery={searchQuery}
                       />
                     </td>
                   );

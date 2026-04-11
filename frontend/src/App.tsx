@@ -14,6 +14,18 @@ const glowStyles = `
 .translate-glow-icon {
   filter: drop-shadow(0 0 6px rgba(168, 85, 247, 0.8));
 }
+
+.search-highlight {
+  background: radial-gradient(ellipse at center, 
+    transparent 0%, 
+    transparent 45%, 
+    rgba(168, 85, 247, 0.15) 55%, 
+    rgba(168, 85, 247, 0.3) 70%, 
+    rgba(168, 85, 247, 0.5) 85%, 
+    rgba(168, 85, 247, 0.7) 100%
+  );
+  border-radius: 4px;
+}
 `;
 
 function App() {

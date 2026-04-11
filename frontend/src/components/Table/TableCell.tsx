@@ -9,7 +9,15 @@ interface TableCellProps {
   translation?: Translation;
   languageCode: string;
   isSource: boolean;
+  searchQuery?: string;
 }
+
+const normalizeText = (text: string): string => {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+};
 
 function formatGrammarInfo(translation: Translation): string {
   const parts: string[] = [];
@@ -37,7 +45,7 @@ function formatGrammarInfo(translation: Translation): string {
   return parts.join(', ');
 }
 
-export default function TableCell({ entryId, translation, languageCode, isSource }: TableCellProps) {
+export default function TableCell({ entryId, translation, languageCode, isSource, searchQuery }: TableCellProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [value, setValue] = useState(translation?.text || '');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -112,10 +120,13 @@ export default function TableCell({ entryId, translation, languageCode, isSource
 
   const displayText = value || '';
   const grammarSuffix = grammarMode && translation ? formatGrammarInfo(translation) : '';
+  
+  const isHighlighted = searchQuery && translation?.text && 
+    normalizeText(translation.text).includes(normalizeText(searchQuery));
 
   return (
     <div 
-      className="editable-cell px-2 py-1 min-h-[3rem] flex items-start justify-between gap-2"
+      className={`editable-cell px-2 py-1 min-h-[3rem] flex items-start justify-between gap-2 ${isHighlighted ? 'search-highlight' : ''}`}
       onDoubleClick={handleDoubleClick}
     >
       <div className="flex-1">
