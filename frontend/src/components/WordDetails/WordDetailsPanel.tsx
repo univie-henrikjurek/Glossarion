@@ -59,22 +59,40 @@ export default function WordDetailsPanel() {
     
     const cleanHtml = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
     
-    const pronunciationMatch = cleanHtml.match(/\/([^\/]+)\//g);
-    if (pronunciationMatch) {
-      data.pronunciation = pronunciationMatch[0];
+    const ipaPatterns = [
+      /\/([\wːʊəɛäöüßŋç]+)\//g,
+      /\[([\wːʊəɛäöüßŋç]+)\]/g,
+    ];
+    
+    for (const pattern of ipaPatterns) {
+      const matches = cleanHtml.match(pattern);
+      if (matches && matches.length > 0) {
+        data.pronunciation = matches[0].replace(/[\[\]\/]/g, '');
+        if (data.pronunciation.length < 30) break;
+      }
     }
     
-    const ipaMatch = html.match(/IPA\(...\):\s*\/([^\/]+)\//);
-    if (ipaMatch) {
-      data.pronunciation = `/${ipaMatch[1]}/`;
+    if (!data.pronunciation) {
+      const pronunciationMatch = cleanHtml.match(/\/([^\/]+)\//);
+      if (pronunciationMatch) {
+        data.pronunciation = pronunciationMatch[1];
+      }
     }
 
-    const exampleMatches = html.match(/<dd[^>]*class="[^"]*example[^"]*"[^>]*>(.*?)<\/dd>/gi);
-    if (exampleMatches) {
-      data.examples = exampleMatches
-        .map(m => m.replace(/<[^>]+>/g, '').trim())
-        .filter(e => e.length > 10 && e.length < 200)
-        .slice(0, 3);
+    const exampleDdMatches = html.match(/<dd[^>]*>([^<]*(?:<[^>]+>[^<]*)*)<\/dd>/gi);
+    if (exampleDdMatches) {
+      const examples: string[] = [];
+      for (const match of exampleDdMatches) {
+        const cleaned = match
+          .replace(/<[^>]+>/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+        if (cleaned.length > 15 && cleaned.length < 250 && !cleaned.startsWith('[')) {
+          examples.push(cleaned);
+        }
+        if (examples.length >= 3) break;
+      }
+      data.examples = examples;
     }
 
     return data;
