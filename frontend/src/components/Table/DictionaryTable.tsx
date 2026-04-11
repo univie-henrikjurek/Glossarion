@@ -172,11 +172,11 @@ export default function DictionaryTable() {
         return sortConfig.direction === 'asc' ? dateA - dateB : dateB - dateA;
       }
       if (sortConfig.key === 'language') {
-        const firstA = a.translations[0]?.language_code || '';
-        const firstB = b.translations[0]?.language_code || '';
+        const sourceA = a.translations.find(t => t.language_code === sourceLanguage)?.text?.toLowerCase() || '';
+        const sourceB = b.translations.find(t => t.language_code === sourceLanguage)?.text?.toLowerCase() || '';
         return sortConfig.direction === 'asc' 
-          ? firstA.localeCompare(firstB) 
-          : firstB.localeCompare(firstA);
+          ? sourceA.localeCompare(sourceB) 
+          : sourceB.localeCompare(sourceA);
       }
       if (sortConfig.key === 'status') {
         const hasAutoA = a.translations.some(t => t.status === 'auto');
