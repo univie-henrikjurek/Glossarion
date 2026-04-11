@@ -60,32 +60,13 @@ export default function WordDetailsPanel() {
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
     
-    const pronSection = doc.querySelector('h2, h3, h4')?.textContent?.toLowerCase().includes('pron') ||
-                        doc.querySelector('h2, h3, h4')?.textContent?.toLowerCase().includes('aussprache') ||
-                        doc.querySelector('h2, h3, h4')?.textContent?.toLowerCase().includes('pronuncia')
-      ? doc : null;
-    
-    const extractIPA = (element: Element | null): string | null => {
-      if (!element) return null;
-      
-      const ipaSpans = element.querySelectorAll('.IPA, [lang], .lang-la');
-      for (const span of ipaSpans) {
-        const text = span.textContent?.trim() || '';
-        if (text.startsWith('/') && text.endsWith('/')) {
-          return text;
-        }
-        if (text.startsWith('[') && text.endsWith(']')) {
-          return text;
-        }
-      }
-      
-      const allText = element.textContent || '';
-      const ipaMatch = allText.match(/[\/\[][\wːʊəɛäöüßŋç\'\-]+[\/\]]/);
-      if (ipaMatch) {
-        return ipaMatch[0];
-      }
-      
-      return null;
+    const isValidIPA = (text: string): boolean => {
+      const clean = text.replace(/[\[\]\/]/g, '');
+      if (clean.length < 2 || clean.length > 30) return false;
+      const hasIPAChars = /[ɛɔəʊɪæɑŋçθðʃʒŋ|]/.test(clean);
+      const hasDiacritics = /[ːˈˌ]/.test(clean);
+      const isNotJustEnglish = !/^[a-zA-Z]+$/.test(clean) || hasIPAChars || hasDiacritics;
+      return isNotJustEnglish && /[a-zA-Z]/.test(clean);
     };
     
     const headers = doc.querySelectorAll('h2, h3, h4, h5');
@@ -99,11 +80,15 @@ export default function WordDetailsPanel() {
           sibling = sibling.nextElementSibling;
         }
         
-        const sectionIpa = sectionText.match(/[\/\[][\wːʊəɛäöüßŋç\'\-]+[\/\]]/);
-        if (sectionIpa) {
-          data.pronunciation = sectionIpa[0].replace(/[\[\]\/]/g, '');
-          break;
+        const allIPA = sectionText.match(/[\/\[][^\]\[]+[\/\]]/g) || [];
+        for (const match of allIPA) {
+          const cleaned = match.replace(/[\[\]\/]/g, '');
+          if (isValidIPA(cleaned)) {
+            data.pronunciation = cleaned;
+            break;
+          }
         }
+        if (data.pronunciation) break;
       }
     }
     
@@ -111,9 +96,16 @@ export default function WordDetailsPanel() {
     const examples: string[] = [];
     for (const dd of ddElements) {
       const text = dd.textContent?.trim() || '';
-      if (text.length > 15 && text.length < 150 && !text.includes('Synonyme') && !text.includes('Synonym') && !text.includes('Traduction')) {
-        if (examples.length === 0 || !examples.includes(text)) {
-          examples.push(text);
+      const isValidExample = text.length > 20 && text.length < 200 &&
+        !text.includes('Synonym') && !text.includes('Traduktion') &&
+        !text.includes('Traduzione') && !text.includes('Traduction') &&
+        !text.includes('Hinweis') && !text.includes('Siehe auch') &&
+        !text.includes('Wiktionary') && !text.includes('Wikipedia');
+      
+      if (isValidExample) {
+        const cleaned = text.replace(/\s+/g, ' ').trim();
+        if (!examples.includes(cleaned) && cleaned.split(' ').length >= 3) {
+          examples.push(cleaned);
         }
       }
       if (examples.length >= 3) break;
