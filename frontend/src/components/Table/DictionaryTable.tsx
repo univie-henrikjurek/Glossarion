@@ -72,7 +72,7 @@ export default function DictionaryTable() {
     entries.forEach((e: Entry) => {
       e.translations.forEach((t: Translation) => langs.add(t.language_code));
     });
-    return Array.from(langs);
+    return Array.from(langs).sort();
   }, [entries, sourceLanguage, targetLanguages]);
 
   const visibleLanguages = useMemo(() => {
