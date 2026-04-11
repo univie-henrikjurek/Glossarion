@@ -153,9 +153,10 @@ async def register(data: UserCreate, db: AsyncSession = Depends(get_db)):
         source_language="de"
     )
     db.add(default_dictionary)
+    await db.flush()
     
     owner_membership = DictionaryMember(
-        dictionary=default_dictionary,
+        dictionary_id=default_dictionary.id,
         user_id=user.id,
         role="owner"
     )
