@@ -115,7 +115,7 @@ export const useDictionaryStore = create<DictionaryState>()(
     }
   },
 
-  updateTranslation: async (id: string, data: { text?: string; status?: string }) => {
+  updateTranslation: async (id: string, data: { text?: string; status?: string; word_type?: string; gender?: string; article?: string }) => {
     try {
       const updated = await apiService.updateTranslation(id, data);
       const entries = get().entries.map(e => ({

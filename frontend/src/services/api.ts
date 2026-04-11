@@ -47,7 +47,7 @@ export const apiService = {
 
   async updateTranslation(
     id: string,
-    data: { text?: string; status?: string }
+    data: { text?: string; status?: string; word_type?: string; gender?: string; article?: string }
   ): Promise<Translation> {
     const response = await api.put<Translation>(`/translations/${id}`, data);
     return response.data;

@@ -27,6 +27,12 @@ async def update_translation(
         translation.text = data.text
     if data.status is not None:
         translation.status = data.status
+    if data.word_type is not None:
+        translation.word_type = data.word_type if data.word_type != '' else None
+    if data.gender is not None:
+        translation.gender = data.gender if data.gender != '' else None
+    if data.article is not None:
+        translation.article = data.article if data.article != '' else None
     
     translation.updated_at = datetime.utcnow()
     await db.commit()
