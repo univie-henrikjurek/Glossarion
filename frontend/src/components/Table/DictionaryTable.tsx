@@ -549,13 +549,13 @@ export default function DictionaryTable() {
                         <GlowTranslateIcon active={isTargetLang} />
                       </button>
                       <button
-                        onClick={() => toggleColumn(`lang_${lang}`)}
+                        onClick={() => handleSort(lang)}
                         className={`flex items-center gap-1 transition-colors cursor-pointer ${isSorted ? 'text-purple-400' : 'hover:text-primary-400'}`}
-                        title="Hide column"
+                        title="Sort by this language"
                       >
                         <span className="font-bold">{lang.toUpperCase()}</span>
                         <span className="text-xs text-slate-500">{LANGUAGE_NAMES[lang]?.slice(0, 3)}</span>
-                        {isSorted && <SortIcon direction={sortConfig.direction} />}
+                        <SortIcon direction={isSorted ? sortConfig.direction : null} />
                       </button>
                     </div>
                   </th>
