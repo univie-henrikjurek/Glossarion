@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { useAppStore } from '../../stores/appStore';
 import { useDictionaryStore } from '../../stores/dictionaryStore';
@@ -33,6 +33,13 @@ export default function WordDetailsPanel() {
         setContext(entry.context || '');
       }
     }
+  }, [wordDetails, entries]);
+
+  const currentTranslation = useMemo(() => {
+    if (!wordDetails?.entry || !wordDetails?.translation) return null;
+    const entry = entries.find(e => e.id === wordDetails.entry!.id);
+    if (!entry) return null;
+    return entry.translations.find(t => t.id === wordDetails.translation!.id) || null;
   }, [wordDetails, entries]);
 
   useEffect(() => {
@@ -283,9 +290,9 @@ export default function WordDetailsPanel() {
                       if (editingGrammar) {
                         setEditingGrammar(false);
                       } else {
-                        setEditWordType(translation?.word_type || '');
-                        setEditGender(translation?.gender || '');
-                        setEditArticle(translation?.article || '');
+                        setEditWordType(currentTranslation?.word_type || '');
+                        setEditGender(currentTranslation?.gender || '');
+                        setEditArticle(currentTranslation?.article || '');
                         setEditingGrammar(true);
                       }
                     }}
@@ -361,23 +368,23 @@ export default function WordDetailsPanel() {
                   </div>
                 ) : (
                   <div className="flex flex-wrap gap-2">
-                    {!translation?.article && !translation?.gender && !translation?.word_type ? (
+                    {!currentTranslation?.article && !currentTranslation?.gender && !currentTranslation?.word_type ? (
                       <span className="text-slate-500 text-sm italic">No grammar info</span>
                     ) : (
                       <>
-                        {translation?.article && (
+                        {currentTranslation?.article && (
                           <span className="px-3 py-1.5 bg-slate-700 rounded-lg text-slate-300 text-sm font-mono">
-                            {translation.article}
+                            {currentTranslation.article}
                           </span>
                         )}
-                        {translation?.gender && (
+                        {currentTranslation?.gender && (
                           <span className="px-3 py-1.5 bg-slate-700 rounded-lg text-slate-300 text-sm font-mono">
-                            {translation.gender === 'm' ? 'masculine' : translation.gender === 'f' ? 'feminine' : 'neuter'}
+                            {currentTranslation.gender === 'm' ? 'masculine' : currentTranslation.gender === 'f' ? 'feminine' : 'neuter'}
                           </span>
                         )}
-                        {translation?.word_type && (
+                        {currentTranslation?.word_type && (
                           <span className="px-3 py-1.5 bg-slate-700 rounded-lg text-slate-300 text-sm">
-                            {translation.word_type}
+                            {currentTranslation.word_type}
                           </span>
                         )}
                       </>
