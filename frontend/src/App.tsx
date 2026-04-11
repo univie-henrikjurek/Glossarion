@@ -6,31 +6,13 @@ import EntryModal from './components/Entry/EntryModal';
 import WordDetailsPanel from './components/WordDetails/WordDetailsPanel';
 
 const glowStyles = `
-@keyframes translateBreath {
-  0%, 100% { opacity: 0.3; transform: scale(0.8); }
-  50% { opacity: 0.6; transform: scale(1.2); }
-}
-
-@keyframes translateGlow {
-  0%, 100% { 
-    filter: drop-shadow(0 0 4px rgba(168, 85, 247, 0.5));
-  }
-  50% { 
-    filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.9));
-  }
-}
-
-.translate-glow-active {
-  animation: translateBreath 2.5s ease-in-out infinite;
-}
-
 .translate-glow-ring {
-  background: radial-gradient(circle, rgba(168, 85, 247, 0.6) 0%, transparent 70%);
-  animation: translateBreath 2.5s ease-in-out infinite;
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.4) 0%, transparent 70%);
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.6);
 }
 
 .translate-glow-icon {
-  animation: translateGlow 2.5s ease-in-out infinite;
+  filter: drop-shadow(0 0 6px rgba(168, 85, 247, 0.8));
 }
 `;
 
