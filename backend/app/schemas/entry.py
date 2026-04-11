@@ -27,6 +27,7 @@ class EntryBase(BaseModel):
 
 class EntryCreate(EntryBase):
     source_language: Optional[str] = None
+    dictionary_id: Optional[str] = None
 
 
 class EntryUpdate(BaseModel):

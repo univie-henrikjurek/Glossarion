@@ -7,3 +7,5 @@ pydantic-settings==2.1.0
 httpx==0.26.0
 python-dotenv==1.0.0
 spacy==3.7.4
+PyJWT==2.8.0
+bcrypt==4.1.2

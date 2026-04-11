@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:80,http://localhost:5173"
     source_language: str = "en"
     target_languages: str = "de,fr,es"
+    jwt_secret: str = "change-this-secret-in-production-use-long-random-string"
     
     @property
     def target_language_list(self) -> list[str]:

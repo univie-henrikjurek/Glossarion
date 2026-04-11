@@ -6,7 +6,7 @@ from sqlalchemy.orm import selectinload
 
 from app.database import init_db, AsyncSessionLocal, engine
 from app.models import Entry
-from app.api import entries_router, translations_router
+from app.api import entries_router, translations_router, auth_router, dictionaries_router, invitations_router
 from app.config import get_settings
 from app.services import TranslatorService
 
@@ -18,6 +18,7 @@ async def run_migrations():
         await conn.execute(text("""
             DO $$
             BEGIN
+                -- Translation columns
                 IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'translations' AND column_name = 'word_type') THEN
                     ALTER TABLE translations ADD COLUMN word_type VARCHAR(20);
                 END IF;
@@ -29,6 +30,67 @@ async def run_migrations():
                 END IF;
                 IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'translations' AND column_name = 'grammar_details') THEN
                     ALTER TABLE translations ADD COLUMN grammar_details JSON;
+                END IF;
+                
+                -- Users table
+                IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'users') THEN
+                    CREATE TABLE users (
+                        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        username VARCHAR(50) UNIQUE NOT NULL,
+                        email VARCHAR(100) UNIQUE NOT NULL,
+                        password_hash VARCHAR(255) NOT NULL,
+                        name VARCHAR(100),
+                        created_at TIMESTAMP DEFAULT NOW(),
+                        updated_at TIMESTAMP DEFAULT NOW()
+                    );
+                    CREATE INDEX idx_users_username ON users(username);
+                    CREATE INDEX idx_users_email ON users(email);
+                END IF;
+                
+                -- Dictionaries table
+                IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'dictionaries') THEN
+                    CREATE TABLE dictionaries (
+                        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        name VARCHAR(100) NOT NULL,
+                        owner_id UUID NOT NULL REFERENCES users(id),
+                        source_language VARCHAR(10) DEFAULT 'de',
+                        created_at TIMESTAMP DEFAULT NOW(),
+                        updated_at TIMESTAMP DEFAULT NOW()
+                    );
+                END IF;
+                
+                -- Dictionary members table
+                IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'dictionary_members') THEN
+                    CREATE TABLE dictionary_members (
+                        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        dictionary_id UUID NOT NULL REFERENCES dictionaries(id) ON DELETE CASCADE,
+                        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                        role VARCHAR(20) NOT NULL DEFAULT 'editor',
+                        invited_at TIMESTAMP DEFAULT NOW(),
+                        UNIQUE(dictionary_id, user_id)
+                    );
+                END IF;
+                
+                -- Invitations table
+                IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'invitations') THEN
+                    CREATE TABLE invitations (
+                        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        dictionary_id UUID NOT NULL REFERENCES dictionaries(id) ON DELETE CASCADE,
+                        token VARCHAR(64) UNIQUE NOT NULL,
+                        role VARCHAR(20) NOT NULL DEFAULT 'editor',
+                        created_by UUID NOT NULL REFERENCES users(id),
+                        expires_at TIMESTAMP NOT NULL,
+                        accepted VARCHAR(10) DEFAULT 'pending',
+                        accepted_by UUID REFERENCES users(id),
+                        accepted_at TIMESTAMP,
+                        created_at TIMESTAMP DEFAULT NOW()
+                    );
+                    CREATE INDEX idx_invitations_token ON invitations(token);
+                END IF;
+                
+                -- Dictionary ID on entries
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'entries' AND column_name = 'dictionary_id') THEN
+                    ALTER TABLE entries ADD COLUMN dictionary_id UUID REFERENCES dictionaries(id);
                 END IF;
             END $$;
         """))
@@ -60,6 +122,9 @@ app.add_middleware(
 
 app.include_router(entries_router)
 app.include_router(translations_router)
+app.include_router(auth_router)
+app.include_router(dictionaries_router)
+app.include_router(invitations_router)
 
 
 @app.get("/health")

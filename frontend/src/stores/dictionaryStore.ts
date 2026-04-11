@@ -1,10 +1,12 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Entry } from '../types';
-import { apiService } from '../services/api';
+import { apiService, Dictionary, InvitationInfo } from '../services/api';
 import { syncService } from '../services/syncService';
 
 interface DictionaryState {
+  dictionaries: Dictionary[];
+  currentDictionary: Dictionary | null;
   entries: Entry[];
   languages: string[];
   sourceLanguage: string;
@@ -14,6 +16,12 @@ interface DictionaryState {
   isOnline: boolean;
   lastSync: string | null;
   error: string | null;
+  pendingInvitation: InvitationInfo | null;
+  
+  fetchDictionaries: () => Promise<void>;
+  selectDictionary: (dictionary: Dictionary) => void;
+  createDictionary: (name: string, sourceLanguage?: string) => Promise<Dictionary | null>;
+  deleteDictionary: (id: string) => Promise<void>;
   
   fetchEntries: () => Promise<void>;
   addEntry: (context?: string, tags?: string[], sourceLanguage?: string) => Promise<Entry | null>;
@@ -28,6 +36,11 @@ interface DictionaryState {
   setOnline: (online: boolean) => void;
   syncWithServer: () => Promise<void>;
   clearError: () => void;
+  
+  checkInvitation: (token: string) => Promise<InvitationInfo | null>;
+  acceptInvitation: (token: string) => Promise<boolean>;
+  declineInvitation: (token: string) => Promise<void>;
+  clearPendingInvitation: () => void;
 }
 
 const ALL_LANGUAGES = ['en', 'de', 'fr', 'es', 'it', 'pt', 'nl', 'pl', 'ru'];
@@ -37,6 +50,8 @@ const DEFAULT_TARGET_LANGUAGES = ['en', 'de', 'fr', 'es', 'it'];
 export const useDictionaryStore = create<DictionaryState>()(
   persist(
     (set, get) => ({
+      dictionaries: [],
+      currentDictionary: null,
       entries: [],
       languages: [],
       sourceLanguage: 'en',
@@ -46,11 +61,102 @@ export const useDictionaryStore = create<DictionaryState>()(
       isOnline: navigator.onLine,
       lastSync: null,
       error: null,
+      pendingInvitation: null,
 
-  fetchEntries: async () => {
+  fetchDictionaries: async () => {
     set({ isLoading: true, error: null });
     try {
-      const entries = await apiService.getEntries();
+      const dictionaries = await apiService.dictionaries.list();
+      const current = get().currentDictionary;
+      const selectedDict = current 
+        ? dictionaries.find(d => d.id === current.id) || dictionaries[0] || null
+        : dictionaries[0] || null;
+      set({ dictionaries, currentDictionary: selectedDict, isLoading: false });
+      if (selectedDict) {
+        get().fetchEntries();
+      }
+    } catch {
+      set({ isLoading: false, error: 'Failed to load dictionaries' });
+    }
+  },
+
+  selectDictionary: (dictionary: Dictionary) => {
+    set({ currentDictionary: dictionary, entries: [] });
+    get().fetchEntries();
+  },
+
+  createDictionary: async (name: string, sourceLanguage: string = 'de') => {
+    try {
+      const dictionary = await apiService.dictionaries.create(name, sourceLanguage);
+      const dictionaries = [...get().dictionaries, dictionary];
+      set({ dictionaries, currentDictionary: dictionary, entries: [] });
+      get().fetchEntries();
+      return dictionary;
+    } catch {
+      set({ error: 'Failed to create dictionary' });
+      return null;
+    }
+  },
+
+  deleteDictionary: async (id: string) => {
+    try {
+      await apiService.dictionaries.delete(id);
+      const dictionaries = get().dictionaries.filter(d => d.id !== id);
+      const current = get().currentDictionary;
+      const newCurrent = current?.id === id 
+        ? dictionaries[0] || null 
+        : current;
+      set({ dictionaries, currentDictionary: newCurrent });
+      if (newCurrent) {
+        get().fetchEntries();
+      } else {
+        set({ entries: [] });
+      }
+    } catch {
+      set({ error: 'Failed to delete dictionary' });
+    }
+  },
+
+  checkInvitation: async (token: string) => {
+    try {
+      const info = await apiService.invitations.get(token);
+      set({ pendingInvitation: info });
+      return info;
+    } catch {
+      return null;
+    }
+  },
+
+  acceptInvitation: async (token: string) => {
+    try {
+      await apiService.invitations.accept(token);
+      await get().fetchDictionaries();
+      set({ pendingInvitation: null });
+      return true;
+    } catch {
+      set({ error: 'Failed to accept invitation' });
+      return false;
+    }
+  },
+
+  declineInvitation: async (token: string) => {
+    try {
+      await apiService.invitations.decline(token);
+      set({ pendingInvitation: null });
+    } catch {
+      set({ error: 'Failed to decline invitation' });
+    }
+  },
+
+  clearPendingInvitation: () => {
+    set({ pendingInvitation: null });
+  },
+
+  fetchEntries: async () => {
+    const currentDict = get().currentDictionary;
+    set({ isLoading: true, error: null });
+    try {
+      const entries = await apiService.getEntries(currentDict?.id);
       await syncService.saveEntriesLocally(entries);
       set({ entries, isLoading: false, lastSync: new Date().toISOString() });
     } catch {
@@ -64,14 +170,20 @@ export const useDictionaryStore = create<DictionaryState>()(
   },
 
   addEntry: async (context?: string, tags: string[] = [], sourceLanguage?: string) => {
+    const currentDict = get().currentDictionary;
     try {
-      const entry = await apiService.createEntry({ context, tags, source_language: sourceLanguage });
+      const entry = await apiService.createEntry({ 
+        context, 
+        tags, 
+        source_language: sourceLanguage,
+        dictionary_id: currentDict?.id 
+      });
       const entries = [...get().entries, entry];
       await syncService.updateLocalEntry(entry);
       set({ entries });
       return entry;
     } catch {
-      await syncService.addToSyncQueue('create', { context, tags, source_language: sourceLanguage });
+      await syncService.addToSyncQueue('create', { context, tags, source_language: sourceLanguage, dictionary_id: currentDict?.id });
       set({ error: 'Saved offline - will sync when online' });
       return null;
     }

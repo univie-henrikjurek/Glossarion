@@ -16,11 +16,15 @@ settings = get_settings()
 
 @router.get("", response_model=list[EntryResponse])
 async def list_entries(
+    dictionary_id: str | None = Query(default=None),
     language: str | None = None,
     tag: str | None = None,
     db: AsyncSession = Depends(get_db)
 ):
     query = select(Entry).options(selectinload(Entry.translations))
+    
+    if dictionary_id:
+        query = query.where(Entry.dictionary_id == dictionary_id)
     
     if tag:
         query = query.where(Entry.tags.contains([tag]))
@@ -49,7 +53,8 @@ async def create_entry(
     
     entry = Entry(
         context=entry_data.context,
-        tags=entry_data.tags
+        tags=entry_data.tags,
+        dictionary_id=entry_data.dictionary_id
     )
     db.add(entry)
     await db.flush()
