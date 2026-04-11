@@ -118,12 +118,11 @@ export default function DictionaryTable() {
   const allLanguages = useMemo(() => {
     const langs = new Set<string>();
     langs.add(sourceLanguage);
-    targetLanguages.forEach(l => langs.add(l));
     entries.forEach((e: Entry) => {
       e.translations.forEach((t: Translation) => langs.add(t.language_code));
     });
     return Array.from(langs).sort();
-  }, [entries, sourceLanguage, targetLanguages]);
+  }, [entries, sourceLanguage]);
 
   const allTags = useMemo(() => {
     const tags = new Set<string>();
@@ -528,15 +527,20 @@ export default function DictionaryTable() {
               <th className="px-4 py-3 text-left text-sm font-semibold text-slate-300 border-b border-slate-700 w-24">
                 Actions
               </th>
-              {visibleLanguages.map((lang: string) => {
+              {allLanguages.map((lang: string) => {
                 const isTargetLang = targetLanguages.includes(lang);
+                const isVisible = !hiddenColumns.has(`lang_${lang}`);
                 const isSorted = sortConfig.key === lang;
                 return (
-                  <th key={lang} className="px-4 py-3 text-left text-sm font-semibold text-slate-300 border-b border-l border-slate-700">
+                  <th 
+                    key={lang} 
+                    className={`px-4 py-3 text-left text-sm font-semibold text-slate-300 border-b border-l border-slate-700 ${isVisible ? '' : 'opacity-40'}`}
+                  >
                     <div className="flex items-center gap-2">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
+                          e.preventDefault();
                           toggleTargetLanguage(lang);
                         }}
                         title={isTargetLang ? 'Click to disable auto-translate' : 'Click to enable auto-translate'}
@@ -545,9 +549,19 @@ export default function DictionaryTable() {
                         <GlowTranslateIcon active={isTargetLang} />
                       </button>
                       <button
-                        onClick={() => handleSort(lang)}
-                        className={`flex items-center gap-1 transition-colors cursor-pointer ${isSorted ? 'text-purple-400' : 'hover:text-primary-400'}`}
-                        title={`Sort by ${lang.toUpperCase()}`}
+                        onClick={() => {
+                          if (isVisible) {
+                            toggleColumn(`lang_${lang}`);
+                          } else {
+                            setHiddenColumns(prev => {
+                              const next = new Set(prev);
+                              next.delete(`lang_${lang}`);
+                              return next;
+                            });
+                          }
+                        }}
+                        className={`flex items-center gap-1 transition-colors cursor-pointer ${isSorted ? 'text-purple-400' : 'hover:text-primary-400'} ${isVisible ? '' : 'line-through opacity-60'}`}
+                        title={isVisible ? 'Hide column' : 'Show column'}
                       >
                         <span className="font-bold">{lang.toUpperCase()}</span>
                         <span className="text-xs text-slate-500">{LANGUAGE_NAMES[lang]?.slice(0, 3)}</span>
@@ -603,10 +617,11 @@ export default function DictionaryTable() {
                     </button>
                   </div>
                 </td>
-                {visibleLanguages.map((lang: string) => {
+                {allLanguages.map((lang: string) => {
                   const translation = entry.translations.find((t: Translation) => t.language_code === lang);
+                  const isVisible = !hiddenColumns.has(`lang_${lang}`);
                   return (
-                    <td key={lang} className="px-4 py-2 border-l border-slate-700 min-w-32">
+                    <td key={lang} className={`px-4 py-2 border-l border-slate-700 min-w-32 ${isVisible ? '' : 'hidden'}`}>
                       <TableCell
                         entryId={entry.id}
                         translation={translation}
