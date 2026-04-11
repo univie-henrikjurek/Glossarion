@@ -126,10 +126,10 @@ export default function TableCell({ entryId, translation, languageCode, isSource
 
   return (
     <div 
-      className={`editable-cell px-2 py-1 min-h-[3rem] flex items-start justify-between gap-2 ${isHighlighted ? 'search-highlight' : ''}`}
+      className={`editable-cell relative px-2 py-1 min-h-[3rem] ${isHighlighted ? 'search-highlight' : ''}`}
       onDoubleClick={handleDoubleClick}
     >
-      <div className="flex-1">
+      <div className="pr-8">
         <div className="text-sm">{displayText || <span className="text-slate-500 italic">Double-click to edit</span>}</div>
         {grammarSuffix && (
           <div className="text-xs text-slate-500 mt-0.5">{grammarSuffix}</div>
@@ -138,9 +138,9 @@ export default function TableCell({ entryId, translation, languageCode, isSource
       {translation && (
         <button
           onClick={handleToggleStatus}
-          className="shrink-0 mt-0.5"
+          className="absolute top-1 right-1"
         >
-          <TranslationStatus status={translation.status} />
+          <TranslationStatus status={translation.status} compact />
         </button>
       )}
     </div>
