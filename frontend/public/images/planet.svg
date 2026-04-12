@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+  <defs>
+    <radialGradient id="planetGrad" cx="40%" cy="40%">
+      <stop offset="0%" style="stop-color:#818cf8"/>
+      <stop offset="50%" style="stop-color:#6366f1"/>
+      <stop offset="100%" style="stop-color:#4338ca"/>
+    </radialGradient>
+    <radialGradient id="glowGrad" cx="50%" cy="50%">
+      <stop offset="0%" style="stop-color:#a78bfa;stop-opacity:0.4"/>
+      <stop offset="100%" style="stop-color:#a78bfa;stop-opacity:0"/>
+    </radialGradient>
+    <radialGradient id="ringGrad" cx="50%" cy="50%">
+      <stop offset="0%" style="stop-color:#c4b5fd;stop-opacity:0.6"/>
+      <stop offset="50%" style="stop-color:#ddd6fe;stop-opacity:0.8"/>
+      <stop offset="100%" style="stop-color:#c4b5fd;stop-opacity:0.6"/>
+    </radialGradient>
+  </defs>
+  <rect width="800" height="600" fill="#0f172a"/>
+  <circle cx="400" cy="300" r="200" fill="url(#glowGrad)"/>
+  <circle cx="400" cy="300" r="150" fill="url(#planetGrad)"/>
+  <ellipse cx="400" cy="300" rx="250" ry="40" fill="none" stroke="url(#ringGrad)" stroke-width="8" opacity="0.7"/>
+  <ellipse cx="400" cy="300" rx="270" ry="50" fill="none" stroke="#e9d5ff" stroke-width="2" opacity="0.3"/>
+  <ellipse cx="400" cy="300" rx="230" ry="30" fill="none" stroke="#e9d5ff" stroke-width="2" opacity="0.2"/>
+  <circle cx="350" cy="250" r="30" fill="#c4b5fd" opacity="0.2"/>
+  <circle cx="450" cy="350" r="20" fill="#818cf8" opacity="0.15"/>
+  <circle cx="380" cy="380" r="15" fill="#6366f1" opacity="0.2"/>
+</svg>
