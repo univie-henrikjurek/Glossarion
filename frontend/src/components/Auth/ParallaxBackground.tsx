@@ -1,21 +1,25 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 interface ParallaxBackgroundProps {
   showPlanet?: boolean;
 }
 
 export default function ParallaxBackground({ showPlanet = true }: ParallaxBackgroundProps) {
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  
+  useEffect(() => {
+    setIsTransitioning(true);
+    const timer = setTimeout(() => setIsTransitioning(false), 1500);
+    return () => clearTimeout(timer);
+  }, [showPlanet]);
+
   useEffect(() => {
     const handleScroll = () => {
       const scrolled = window.pageYOffset;
-      const planetLayer = document.getElementById('parallax-planet');
-      const dictionaryLayer = document.getElementById('parallax-dictionary');
-      
-      if (planetLayer) {
-        planetLayer.style.transform = `translateY(${scrolled * 0.3}px)`;
-      }
-      if (dictionaryLayer) {
-        dictionaryLayer.style.transform = `translateY(${scrolled * 0.5}px)`;
+      const bgLayer = document.getElementById('parallax-hero-bg');
+      if (bgLayer) {
+        const translateY = scrolled * 0.3;
+        bgLayer.style.transform = `translateY(${translateY}px)`;
       }
     };
 
@@ -23,27 +27,19 @@ export default function ParallaxBackground({ showPlanet = true }: ParallaxBackgr
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const backgroundPosition = showPlanet ? '30% center' : '70% center';
+
   return (
     <div className="fixed inset-0 overflow-hidden z-0">
       <div className="parallax-gradient" />
       
       <div 
-        id="parallax-dictionary"
-        className="parallax-layer-dictionary"
+        id="parallax-hero-bg"
+        className="parallax-hero-bg"
         style={{ 
-          backgroundImage: 'url(/images/dictionary.svg)',
-          opacity: showPlanet ? 0 : 1,
-          transform: showPlanet ? 'translateX(-50px)' : 'translateX(0)'
-        }}
-      />
-      
-      <div 
-        id="parallax-planet"
-        className="parallax-layer-planet"
-        style={{ 
-          backgroundImage: 'url(/images/planet.svg)',
-          opacity: showPlanet ? 1 : 0,
-          transform: showPlanet ? 'translateX(0)' : 'translateX(50px)'
+          backgroundImage: 'url(/images/hero-bg.svg)',
+          backgroundPosition: backgroundPosition,
+          transition: isTransitioning ? 'background-position 1.5s cubic-bezier(0.4, 0, 0.2, 1)' : 'none'
         }}
       />
       
