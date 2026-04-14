@@ -311,17 +311,6 @@ export default function WordDetailsPanel() {
                         placeholder="word type (noun, verb, adj...)"
                         className="flex-1 px-2 py-1 bg-slate-600 border border-slate-500 rounded text-white text-sm focus:outline-none focus:border-purple-500"
                       />
-                      <button
-                        onClick={async () => {
-                          if (translation) {
-                            await updateTranslation(translation.id, { word_type: editWordType || undefined });
-                            setEditingGrammar(false);
-                          }
-                        }}
-                        className="px-3 py-1 bg-purple-600 hover:bg-purple-500 text-white text-sm rounded"
-                      >
-                        Save
-                      </button>
                     </div>
                     <div className="flex gap-2">
                       <select
@@ -334,16 +323,6 @@ export default function WordDetailsPanel() {
                         <option value="f">Feminine (f)</option>
                         <option value="n">Neuter (n)</option>
                       </select>
-                      <button
-                        onClick={async () => {
-                          if (translation) {
-                            await updateTranslation(translation.id, { gender: editGender || undefined });
-                          }
-                        }}
-                        className="px-3 py-1 bg-purple-600 hover:bg-purple-500 text-white text-sm rounded"
-                      >
-                        Save
-                      </button>
                     </div>
                     <div className="flex gap-2">
                       <input
@@ -353,16 +332,28 @@ export default function WordDetailsPanel() {
                         placeholder="article (der, die, das...)"
                         className="flex-1 px-2 py-1 bg-slate-600 border border-slate-500 rounded text-white text-sm focus:outline-none focus:border-purple-500"
                       />
+                    </div>
+                    <div className="flex gap-2 pt-2">
+                      <button
+                        onClick={() => setEditingGrammar(false)}
+                        className="flex-1 px-3 py-1 bg-slate-600 hover:bg-slate-500 text-white text-sm rounded"
+                      >
+                        Cancel
+                      </button>
                       <button
                         onClick={async () => {
                           if (translation) {
-                            await updateTranslation(translation.id, { article: editArticle || undefined });
+                            await updateTranslation(translation.id, { 
+                              word_type: editWordType || undefined,
+                              gender: editGender || undefined,
+                              article: editArticle || undefined
+                            });
                             setEditingGrammar(false);
                           }
                         }}
-                        className="px-3 py-1 bg-purple-600 hover:bg-purple-500 text-white text-sm rounded"
+                        className="flex-1 px-3 py-1 bg-purple-600 hover:bg-purple-500 text-white text-sm rounded"
                       >
-                        Save
+                        Save All
                       </button>
                     </div>
                   </div>
