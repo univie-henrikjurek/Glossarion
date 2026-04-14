@@ -39,7 +39,7 @@ interface DictionaryState {
 
 const ALL_LANGUAGES = ['en', 'de', 'fr', 'es', 'it', 'pt', 'nl', 'pl', 'ru'];
 
-const DEFAULT_TARGET_LANGUAGES = ['en', 'de', 'fr', 'es', 'it'];
+const DEFAULT_TARGET_LANGUAGES = ['en', 'de', 'fr', 'es', 'it', 'pt', 'nl', 'pl', 'ru'];
 
 export const useDictionaryStore = create<DictionaryState>()(
   persist(

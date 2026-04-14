@@ -29,7 +29,7 @@ services:
       LIBRETRANSLATE_URL: http://libretranslate:5000
       CORS_ORIGINS: "http://localhost,http://localhost:80,http://localhost:5173,http://192.168.0.158"
       SOURCE_LANGUAGE: en
-      TARGET_LANGUAGES: en,de,fr,es
+      TARGET_LANGUAGES: en,de,fr,es,it,pt,nl,pl,ru
     depends_on:
       db:
         condition: service_healthy
@@ -44,7 +44,7 @@ services:
       REDIS_URL: redis://redis:6379
       LIMIT_FILE_SIZE: true
       REQUIRE_API_KEY: false
-      LT_LOAD_ONLY: en,de,fr,es,it
+      LT_LOAD_ONLY: en,de,fr,es,it,pt,nl,pl,ru
     depends_on:
       - redis
     networks:
