@@ -297,5 +297,10 @@ export const useDictionaryStore = create<DictionaryState>()(
   partialize: (state) => ({
     targetLanguages: state.targetLanguages,
   }),
+  onRehydrateStorage: () => (state) => {
+    if (state) {
+      state.initLanguages();
+    }
+  },
 }
 ));

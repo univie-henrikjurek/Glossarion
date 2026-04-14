@@ -133,8 +133,11 @@ function AppContent() {
   const { fetchDictionaries, isLoading, error, clearError, currentDictionary, initLanguages } = useDictionaryStore();
 
   useEffect(() => {
-    initLanguages();
-    fetchDictionaries();
+    const init = async () => {
+      await initLanguages();
+      await fetchDictionaries();
+    };
+    init();
 
     const handleOnline = () => useDictionaryStore.getState().setOnline(true);
     const handleOffline = () => useDictionaryStore.getState().setOnline(false);
