@@ -21,7 +21,6 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    image: glossarion-backend:latest
     container_name: glossarion_backend
     restart: unless-stopped
     environment:
@@ -38,6 +37,7 @@ services:
 
   libretranslate:
     image: libretranslate/libretranslate:latest
+    platform: linux/amd64
     container_name: glossarion_libretranslate
     restart: unless-stopped
     environment:
@@ -63,7 +63,6 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    image: glossarion-frontend:latest
     container_name: glossarion_frontend
     restart: unless-stopped
     ports:
