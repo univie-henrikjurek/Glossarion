@@ -5,7 +5,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: glossarion
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-glossarion_dev_2024}
+      POSTGRES_PASSWORD: glossarion_dev_2024
       POSTGRES_DB: glossarion
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -68,15 +68,13 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
-    depends_on:
-      - backend
     networks:
       - glossarion_network
-
-networks:
-  glossarion_network:
-    driver: bridge
 
 volumes:
   postgres_data:
   redis_data:
+
+networks:
+  glossarion_network:
+    driver: bridge

@@ -35,6 +35,7 @@ interface DictionaryState {
   setOnline: (online: boolean) => void;
   syncWithServer: () => Promise<void>;
   clearError: () => void;
+  initLanguages: () => Promise<void>;
 }
 
 const ALL_LANGUAGES = ['en', 'de', 'fr', 'es', 'it', 'pt', 'nl', 'pl', 'ru'];
@@ -277,6 +278,20 @@ export const useDictionaryStore = create<DictionaryState>()(
   },
 
   clearError: () => set({ error: null }),
+
+  initLanguages: async () => {
+    try {
+      const langData = await apiService.getLanguages();
+      set({ 
+        sourceLanguage: langData.source,
+        targetLanguages: langData.targets,
+        availableLanguages: langData.available.map((l: { code: string }) => l.code)
+      });
+    } catch (e) {
+      console.error('Failed to init languages from API:', e);
+      // If API fails, keep using whatever is in state (from persist or defaults)
+    }
+  },
 }),
 {
   name: 'glossarion-store',

@@ -7,10 +7,14 @@ import EntryModal from './components/Entry/EntryModal';
 import WordDetailsPanel from './components/WordDetails/WordDetailsPanel';
 
 function AppContent() {
-  const { fetchDictionaries, isLoading, error, clearError, currentDictionary } = useDictionaryStore();
+  const { fetchDictionaries, isLoading, error, clearError, currentDictionary, initLanguages } = useDictionaryStore();
 
   useEffect(() => {
-    fetchDictionaries();
+    const init = async () => {
+      await initLanguages();
+      await fetchDictionaries();
+    };
+    init();
 
     const handleOnline = () => useDictionaryStore.getState().setOnline(true);
     const handleOffline = () => useDictionaryStore.getState().setOnline(false);
