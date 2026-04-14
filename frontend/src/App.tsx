@@ -130,9 +130,10 @@ function ParallaxBackground() {
 }
 
 function AppContent() {
-  const { fetchDictionaries, isLoading, error, clearError, currentDictionary } = useDictionaryStore();
+  const { fetchDictionaries, isLoading, error, clearError, currentDictionary, initLanguages } = useDictionaryStore();
 
   useEffect(() => {
+    initLanguages();
     fetchDictionaries();
 
     const handleOnline = () => useDictionaryStore.getState().setOnline(true);
