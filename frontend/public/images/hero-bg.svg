@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2400 600">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e293b"/>
+      <stop offset="100%" style="stop-color:#0f172a"/>
+    </linearGradient>
+    <linearGradient id="bookGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#7c3aed"/>
+      <stop offset="100%" style="stop-color:#4f46e5"/>
+    </linearGradient>
+    <radialGradient id="planetGrad" cx="40%" cy="40%">
+      <stop offset="0%" style="stop-color:#818cf8"/>
+      <stop offset="50%" style="stop-color:#6366f1"/>
+      <stop offset="100%" style="stop-color:#4338ca"/>
+    </radialGradient>
+    <radialGradient id="glowGrad" cx="50%" cy="50%">
+      <stop offset="0%" style="stop-color:#a78bfa;stop-opacity:0.4"/>
+      <stop offset="100%" style="stop-color:#a78bfa;stop-opacity:0"/>
+    </radialGradient>
+  </defs>
+  
+  <rect width="2400" height="600" fill="url(#bgGrad)"/>
+  
+  <g transform="translate(100, 150)">
+    <rect x="0" y="50" width="280" height="350" rx="8" fill="url(#bookGrad)" opacity="0.9"/>
+    <rect x="15" y="65" width="250" height="320" rx="4" fill="#1e293b" opacity="0.5"/>
+    <rect x="30" y="80" width="220" height="8" rx="2" fill="#a78bfa" opacity="0.6"/>
+    <rect x="30" y="100" width="180" height="6" rx="2" fill="#a78bfa" opacity="0.4"/>
+    <rect x="30" y="115" width="200" height="6" rx="2" fill="#a78bfa" opacity="0.4"/>
+    <rect x="30" y="130" width="160" height="6" rx="2" fill="#a78bfa" opacity="0.4"/>
+    <rect x="30" y="160" width="220" height="8" rx="2" fill="#a78bfa" opacity="0.6"/>
+    <rect x="30" y="180" width="190" height="6" rx="2" fill="#a78bfa" opacity="0.4"/>
+    <rect x="30" y="195" width="170" height="6" rx="2" fill="#a78bfa" opacity="0.4"/>
+    <rect x="30" y="240" width="220" height="8" rx="2" fill="#a78bfa" opacity="0.6"/>
+    <rect x="30" y="260" width="200" height="6" rx="2" fill="#a78bfa" opacity="0.4"/>
+    <rect x="30" y="275" width="180" height="6" rx="2" fill="#a78bfa" opacity="0.4"/>
+    <circle cx="140" cy="220" r="40" fill="#c4b5fd" opacity="0.3"/>
+    <text x="140" y="230" font-family="serif" font-size="48" fill="#e9d5ff" text-anchor="middle" opacity="0.8">A</text>
+    <text x="140" y="430" font-family="sans-serif" font-size="24" fill="#c4b5fd" text-anchor="middle" opacity="0.6">DICTIONARY</text>
+  </g>
+  
+  <g transform="translate(1700, 150)">
+    <circle cx="300" cy="300" r="250" fill="url(#glowGrad)"/>
+    <circle cx="300" cy="300" r="180" fill="url(#planetGrad)"/>
+    <ellipse cx="300" cy="300" rx="300" ry="50" fill="none" stroke="#c4b5fd" stroke-width="8" opacity="0.6"/>
+    <ellipse cx="300" cy="300" rx="320" ry="60" fill="none" stroke="#e9d5ff" stroke-width="2" opacity="0.3"/>
+    <ellipse cx="300" cy="300" rx="280" ry="40" fill="none" stroke="#e9d5ff" stroke-width="2" opacity="0.2"/>
+    <circle cx="250" cy="250" r="35" fill="#c4b5fd" opacity="0.2"/>
+    <circle cx="370" cy="370" r="25" fill="#818cf8" opacity="0.15"/>
+    <text x="300" y="520" font-family="sans-serif" font-size="24" fill="#c4b5fd" text-anchor="middle" opacity="0.6">UNIVERSE</text>
+  </g>
+</svg>

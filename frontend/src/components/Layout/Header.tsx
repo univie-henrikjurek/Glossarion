@@ -1,15 +1,110 @@
+import { useState } from 'react';
 import { useDictionaryStore } from '../../stores/dictionaryStore';
 import { useAppStore } from '../../stores/appStore';
 
-export default function Header() {
-  const { entries, isOnline, lastSync } = useDictionaryStore();
+interface HeaderProps {
+}
+
+export default function Header({ }: HeaderProps) {
+  const { 
+    dictionaries, 
+    currentDictionary, 
+    selectDictionary, 
+    entries, 
+    isOnline, 
+    lastSync,
+    createDictionary
+  } = useDictionaryStore();
   const { setShowEntryModal, grammarMode, toggleGrammarMode } = useAppStore();
+  const [showDictDropdown, setShowDictDropdown] = useState(false);
+  const [showNewDictInput, setShowNewDictInput] = useState(false);
+  const [newDictName, setNewDictName] = useState('');
+
+  const handleCreateDict = async () => {
+    if (newDictName.trim()) {
+      await createDictionary(newDictName.trim());
+      setNewDictName('');
+      setShowNewDictInput(false);
+      setShowDictDropdown(false);
+    }
+  };
 
   return (
     <header className="bg-slate-800 border-b border-slate-700 px-4 py-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <h1 className="text-xl font-bold text-primary-400">Glossarion</h1>
+          
+          <div className="relative">
+            <button
+              onClick={() => setShowDictDropdown(!showDictDropdown)}
+              className="flex items-center gap-2 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors"
+            >
+              <span className="text-sm font-medium">
+                {currentDictionary?.name || 'Select Dictionary'}
+              </span>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            
+            {showDictDropdown && (
+              <div className="absolute top-full left-0 mt-1 w-64 bg-slate-700 border border-slate-600 rounded-lg shadow-xl z-50">
+                <div className="max-h-64 overflow-y-auto">
+                  {dictionaries.map(dict => (
+                    <button
+                      key={dict.id}
+                      onClick={() => {
+                        selectDictionary(dict);
+                        setShowDictDropdown(false);
+                      }}
+                      className={`w-full text-left px-4 py-2 hover:bg-slate-600 transition-colors ${
+                        currentDictionary?.id === dict.id ? 'bg-primary-600/30' : ''
+                      }`}
+                    >
+                      <div className="text-sm font-medium">{dict.name}</div>
+                      <div className="text-xs text-slate-400">
+                        {dict.entry_count || 0} entries
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                
+                <div className="border-t border-slate-600 p-2">
+                  {showNewDictInput ? (
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newDictName}
+                        onChange={e => setNewDictName(e.target.value)}
+                        placeholder="Dictionary name"
+                        className="flex-1 px-2 py-1 bg-slate-600 border border-slate-500 rounded text-sm"
+                        autoFocus
+                        onKeyDown={e => e.key === 'Enter' && handleCreateDict()}
+                      />
+                      <button
+                        onClick={handleCreateDict}
+                        className="px-2 py-1 bg-primary-600 hover:bg-primary-500 rounded text-sm"
+                      >
+                        Create
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setShowNewDictInput(true)}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-primary-400 hover:bg-slate-600 rounded transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      New Dictionary
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+          
           <span className="text-slate-400 text-sm">
             {entries.length} {entries.length === 1 ? 'entry' : 'entries'}
           </span>

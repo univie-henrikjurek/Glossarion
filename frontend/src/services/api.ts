@@ -7,9 +7,39 @@ const api = axios.create({
   baseURL: API_URL,
 });
 
+export interface Dictionary {
+  id: string;
+  name: string;
+  source_language: string;
+  created_at: string;
+  entry_count: number;
+}
+
 export const apiService = {
-  async getEntries(): Promise<Entry[]> {
-    const response = await api.get<Entry[]>('/entries');
+  dictionaries: {
+    async list(): Promise<Dictionary[]> {
+      const response = await api.get('/dictionaries');
+      return response.data;
+    },
+
+    async create(name: string, sourceLanguage: string = 'de'): Promise<Dictionary> {
+      const response = await api.post('/dictionaries', { name, source_language: sourceLanguage });
+      return response.data;
+    },
+
+    async update(id: string, data: { name?: string; source_language?: string }): Promise<Dictionary> {
+      const response = await api.put(`/dictionaries/${id}`, data);
+      return response.data;
+    },
+
+    async delete(id: string): Promise<void> {
+      await api.delete(`/dictionaries/${id}`);
+    },
+  },
+
+  async getEntries(dictionaryId?: string): Promise<Entry[]> {
+    const params = dictionaryId ? { dictionary_id: dictionaryId } : {};
+    const response = await api.get<Entry[]>('/entries', { params });
     return response.data;
   },
 
@@ -18,7 +48,7 @@ export const apiService = {
     return response.data;
   },
 
-  async createEntry(data: { context?: string; tags: string[] }): Promise<Entry> {
+  async createEntry(data: { context?: string; tags: string[]; source_language?: string; dictionary_id?: string }): Promise<Entry> {
     const response = await api.post<Entry>('/entries', data);
     return response.data;
   },

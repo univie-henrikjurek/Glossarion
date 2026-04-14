@@ -1,9 +1,23 @@
-import { useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { useDictionaryStore } from './stores/dictionaryStore';
 import Header from './components/Layout/Header';
 import DictionaryTable from './components/Table/DictionaryTable';
 import EntryModal from './components/Entry/EntryModal';
 import WordDetailsPanel from './components/WordDetails/WordDetailsPanel';
+
+interface Hotspot {
+  id: string;
+  label: string;
+  x: number;
+  y: number;
+  route?: string;
+}
+
+const hotspots: Hotspot[] = [
+  { id: 'dictionary', label: 'Dictionary', x: 70, y: 50, route: '/' },
+  { id: 'settings', label: 'Settings', x: 30, y: 50, route: '/settings' },
+];
 
 const glowStyles = `
 .translate-glow-ring {
@@ -28,11 +42,98 @@ const glowStyles = `
 }
 `;
 
-function App() {
-  const { fetchEntries, isLoading, error, clearError } = useDictionaryStore();
+function ParallaxBackground() {
+  const [activeHotspot, setActiveHotspot] = useState<string>('dictionary');
+  const [bgPosition, setBgPosition] = useState({ x: 70, y: 50 });
+  const [isZooming, setIsZooming] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    const hotspot = hotspots.find(h => h.id === activeHotspot);
+    if (hotspot) {
+      setIsZooming(true);
+      setTimeout(() => setIsZooming(false), 1500);
+      setBgPosition({ x: hotspot.x, y: hotspot.y });
+    }
+  }, [activeHotspot]);
 
   useEffect(() => {
-    fetchEntries();
+    const handleScroll = () => {
+      const scrolled = window.pageYOffset;
+      const bgLayer = document.getElementById('parallax-hero-bg');
+      if (bgLayer) {
+        bgLayer.style.transform = `translateY(${scrolled * 0.2}px) scale(1.1)`;
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const navigateTo = (hotspotId: string) => {
+    setActiveHotspot(hotspotId);
+  };
+
+  return (
+    <>
+      <div className="fixed inset-0 overflow-hidden z-0">
+        <div className="parallax-gradient" />
+        
+        <div 
+          id="parallax-hero-bg"
+          className="parallax-hero-bg"
+          style={{ 
+            backgroundImage: 'url(/images/hero-bg.svg)',
+            backgroundPosition: `${bgPosition.x}% ${bgPosition.y}%`,
+            backgroundSize: isZooming ? '120%' : '100%',
+            transition: isZooming 
+              ? 'background-position 1.5s cubic-bezier(0.4, 0, 0.2, 1), background-size 1.5s ease-out'
+              : 'none'
+          }}
+        />
+        
+        <div className="parallax-overlay" />
+      </div>
+
+      <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-20 flex gap-4">
+        {hotspots.map(hotspot => (
+          <button
+            key={hotspot.id}
+            onClick={() => navigateTo(hotspot.id)}
+            className={`px-4 py-2 rounded-full backdrop-blur-md transition-all duration-300 ${
+              activeHotspot === hotspot.id 
+                ? 'bg-purple-600/80 text-white shadow-lg shadow-purple-500/50' 
+                : 'bg-slate-800/60 text-slate-300 hover:bg-slate-700/80'
+            }`}
+          >
+            {hotspot.label}
+          </button>
+        ))}
+      </div>
+
+      <div 
+        ref={containerRef}
+        className="fixed top-8 left-1/2 transform -translate-x-1/2 z-20"
+        style={{ 
+          left: `${bgPosition.x}%`,
+          transform: 'translateX(-50%)',
+          transition: 'left 1.5s cubic-bezier(0.4, 0, 0.2, 1)'
+        }}
+      >
+        <div className="bg-slate-900/80 backdrop-blur-md rounded-xl p-4 shadow-2xl border border-slate-700/50">
+          <h1 className="text-2xl font-bold text-white">Glossarion</h1>
+          <p className="text-slate-400 text-sm">Your multilingual dictionary</p>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function AppContent() {
+  const { fetchDictionaries, isLoading, error, clearError, currentDictionary } = useDictionaryStore();
+
+  useEffect(() => {
+    fetchDictionaries();
 
     const handleOnline = () => useDictionaryStore.getState().setOnline(true);
     const handleOffline = () => useDictionaryStore.getState().setOnline(false);
@@ -44,12 +145,14 @@ function App() {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [fetchEntries]);
+  }, []);
 
   return (
     <>
       <style>{glowStyles}</style>
-      <div className="min-h-screen bg-slate-900 text-slate-100">
+      <ParallaxBackground />
+      
+      <div className="relative z-10 min-h-screen">
         <Header />
         
         {error && (
@@ -66,8 +169,13 @@ function App() {
             <div className="flex items-center justify-center h-64">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
             </div>
-          ) : (
+          ) : currentDictionary ? (
             <DictionaryTable />
+          ) : (
+            <div className="flex flex-col items-center justify-center h-64">
+              <p className="text-slate-400 mb-4">No dictionary selected</p>
+              <p className="text-slate-500 text-sm">Create a new dictionary or select one from the dropdown above.</p>
+            </div>
           )}
         </main>
         
@@ -75,6 +183,16 @@ function App() {
         <WordDetailsPanel />
       </div>
     </>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/*" element={<AppContent />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 

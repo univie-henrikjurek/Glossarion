@@ -37,3 +37,28 @@ body {
 .animate-spin {
   animation: spin 1s linear infinite;
 }
+
+.parallax-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+  z-index: 0;
+}
+
+.parallax-hero-bg {
+  position: absolute;
+  inset: -20%;
+  background-size: 100% auto;
+  background-repeat: no-repeat;
+  will-change: transform;
+  transition: background-position 1.5s cubic-bezier(0.4, 0, 0.2, 1), 
+              background-size 1.5s ease-out,
+              transform 0.1s ease-out;
+}
+
+.parallax-overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 0%, rgba(15, 23, 42, 0.4) 40%, rgba(15, 23, 42, 0.85) 100%);
+  z-index: 1;
+}
