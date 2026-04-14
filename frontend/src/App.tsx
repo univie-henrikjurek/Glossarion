@@ -7,11 +7,9 @@ import EntryModal from './components/Entry/EntryModal';
 import WordDetailsPanel from './components/WordDetails/WordDetailsPanel';
 
 function AppContent() {
-  const { fetchDictionaries, isLoading, error, clearError, currentDictionary, setTargetLanguages } = useDictionaryStore();
+  const { fetchDictionaries, isLoading, error, clearError, currentDictionary } = useDictionaryStore();
 
   useEffect(() => {
-    // Always reset targetLanguages to defaults on mount
-    setTargetLanguages(['en', 'de', 'fr', 'es', 'it', 'pt', 'nl', 'pl', 'ru']);
     fetchDictionaries();
 
     const handleOnline = () => useDictionaryStore.getState().setOnline(true);

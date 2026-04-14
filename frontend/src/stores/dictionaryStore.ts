@@ -295,12 +295,8 @@ export const useDictionaryStore = create<DictionaryState>()(
 }),
 {
   name: 'glossarion-store',
-  partialize: () => ({}), // Don't persist anything - always use defaults from code
-  onRehydrateStorage: () => (state) => {
-    // Reset targetLanguages to defaults on every page load to ensure consistency
-    if (state) {
-      state.setTargetLanguages(DEFAULT_TARGET_LANGUAGES);
-    }
-  },
+  partialize: (state) => ({
+    targetLanguages: state.targetLanguages,
+  }),
 }
 ));
