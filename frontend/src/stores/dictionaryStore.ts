@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Entry } from '../types';
-import { apiService, Dictionary, InvitationInfo } from '../services/api';
+import { apiService, Dictionary } from '../services/api';
 import { syncService } from '../services/syncService';
 
 interface DictionaryState {
@@ -16,7 +16,6 @@ interface DictionaryState {
   isOnline: boolean;
   lastSync: string | null;
   error: string | null;
-  pendingInvitation: InvitationInfo | null;
   
   fetchDictionaries: () => Promise<void>;
   selectDictionary: (dictionary: Dictionary) => void;
@@ -36,11 +35,6 @@ interface DictionaryState {
   setOnline: (online: boolean) => void;
   syncWithServer: () => Promise<void>;
   clearError: () => void;
-  
-  checkInvitation: (token: string) => Promise<InvitationInfo | null>;
-  acceptInvitation: (token: string) => Promise<boolean>;
-  declineInvitation: (token: string) => Promise<void>;
-  clearPendingInvitation: () => void;
 }
 
 const ALL_LANGUAGES = ['en', 'de', 'fr', 'es', 'it', 'pt', 'nl', 'pl', 'ru'];
@@ -61,7 +55,6 @@ export const useDictionaryStore = create<DictionaryState>()(
       isOnline: navigator.onLine,
       lastSync: null,
       error: null,
-      pendingInvitation: null,
 
   fetchDictionaries: async () => {
     set({ isLoading: true, error: null });
@@ -115,41 +108,6 @@ export const useDictionaryStore = create<DictionaryState>()(
     } catch {
       set({ error: 'Failed to delete dictionary' });
     }
-  },
-
-  checkInvitation: async (token: string) => {
-    try {
-      const info = await apiService.invitations.get(token);
-      set({ pendingInvitation: info });
-      return info;
-    } catch {
-      return null;
-    }
-  },
-
-  acceptInvitation: async (token: string) => {
-    try {
-      await apiService.invitations.accept(token);
-      await get().fetchDictionaries();
-      set({ pendingInvitation: null });
-      return true;
-    } catch {
-      set({ error: 'Failed to accept invitation' });
-      return false;
-    }
-  },
-
-  declineInvitation: async (token: string) => {
-    try {
-      await apiService.invitations.decline(token);
-      set({ pendingInvitation: null });
-    } catch {
-      set({ error: 'Failed to decline invitation' });
-    }
-  },
-
-  clearPendingInvitation: () => {
-    set({ pendingInvitation: null });
   },
 
   fetchEntries: async () => {

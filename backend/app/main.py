@@ -6,7 +6,7 @@ from sqlalchemy.orm import selectinload
 
 from app.database import init_db, AsyncSessionLocal, engine
 from app.models import Entry
-from app.api import entries_router, translations_router, auth_router, dictionaries_router, invitations_router
+from app.api import entries_router, translations_router, auth_router, dictionaries_router
 from app.config import get_settings
 from app.services import TranslatorService
 
@@ -52,11 +52,20 @@ async def run_migrations():
                     CREATE TABLE dictionaries (
                         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                         name VARCHAR(100) NOT NULL,
-                        owner_id UUID NOT NULL REFERENCES users(id),
+                        owner_id UUID REFERENCES users(id),
                         source_language VARCHAR(10) DEFAULT 'de',
                         created_at TIMESTAMP DEFAULT NOW(),
                         updated_at TIMESTAMP DEFAULT NOW()
                     );
+                END IF;
+                
+                -- Make owner_id nullable if it exists (for no-auth mode)
+                IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'dictionaries' AND column_name = 'owner_id') THEN
+                    -- Drop FK constraint to allow NULL owner_id
+                    IF EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid = 'dictionaries'::regclass AND contype = 'f' AND confrelid = 'users'::regclass) THEN
+                        ALTER TABLE dictionaries DROP CONSTRAINT IF EXISTS dictionaries_owner_id_fkey;
+                    END IF;
+                    ALTER TABLE dictionaries ALTER COLUMN owner_id DROP NOT NULL;
                 END IF;
                 
                 -- Dictionary members table
@@ -124,7 +133,6 @@ app.include_router(entries_router)
 app.include_router(translations_router)
 app.include_router(auth_router)
 app.include_router(dictionaries_router)
-app.include_router(invitations_router)
 
 
 @app.get("/health")

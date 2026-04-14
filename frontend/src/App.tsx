@@ -5,7 +5,6 @@ import Header from './components/Layout/Header';
 import DictionaryTable from './components/Table/DictionaryTable';
 import EntryModal from './components/Entry/EntryModal';
 import WordDetailsPanel from './components/WordDetails/WordDetailsPanel';
-import ShareModal from './components/Share/ShareModal';
 
 interface Hotspot {
   id: string;
@@ -132,7 +131,6 @@ function ParallaxBackground() {
 
 function AppContent() {
   const { fetchDictionaries, isLoading, error, clearError, currentDictionary } = useDictionaryStore();
-  const [showShareModal, setShowShareModal] = useState(false);
 
   useEffect(() => {
     fetchDictionaries();
@@ -155,7 +153,7 @@ function AppContent() {
       <ParallaxBackground />
       
       <div className="relative z-10 min-h-screen">
-        <Header onOpenShare={() => setShowShareModal(true)} />
+        <Header />
         
         {error && (
           <div className="mx-4 mt-4 p-4 bg-amber-900/50 border border-amber-600 rounded-lg flex items-center justify-between">
@@ -183,7 +181,6 @@ function AppContent() {
         
         <EntryModal />
         <WordDetailsPanel />
-        <ShareModal isOpen={showShareModal} onClose={() => setShowShareModal(false)} />
       </div>
     </>
   );
