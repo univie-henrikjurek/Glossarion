@@ -334,7 +334,7 @@ export default function DictionaryTable() {
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium text-slate-300">Auto-translate:</span>
                 <div className="flex items-center gap-2">
-                  {usedLanguages.map((lang: string) => (
+                  {targetLanguages.map((lang: string) => (
                     <button
                       key={lang}
                       onClick={() => toggleTargetLanguage(lang)}
