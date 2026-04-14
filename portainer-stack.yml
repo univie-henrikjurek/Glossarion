@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: glossarion
+      POSTGRES_PASSWORD: glossarion_dev_2024
+      POSTGRES_DB: glossarion
+    volumes:
+      - glossarion_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U glossarion"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+asyncpg://glossarion:glossarion_dev_2024@db:5432/glossarion
+      LIBRETRANSLATE_URL: http://libretranslate:5000
+      CORS_ORIGINS: "http://localhost,http://localhost:80,http://localhost:5173"
+      SOURCE_LANGUAGE: en
+      TARGET_LANGUAGES: en,de,fr,es,it,pt,nl,pl,ru
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - db
+
+  libretranslate:
+    image: libretranslate/libretranslate:latest
+    platform: linux/amd64
+    restart: unless-stopped
+    environment:
+      REDIS_URL: redis://redis:6379
+      LIMIT_FILE_SIZE: true
+      REQUIRE_API_KEY: false
+      LT_LOAD_ONLY: en,de,fr,es,it,pt,nl,pl,ru
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - glossarion_redis:/data
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "80:80"
+
+volumes:
+  glossarion_postgres:
+  glossarion_redis:
