@@ -287,8 +287,9 @@ export const useDictionaryStore = create<DictionaryState>()(
         targetLanguages: langData.targets,
         availableLanguages: langData.available.map((l: { code: string }) => l.code)
       });
-    } catch {
-      // Use defaults on error
+    } catch (e) {
+      console.error('Failed to init languages from API:', e);
+      // If API fails, keep using whatever is in state (from persist or defaults)
     }
   },
 }),
@@ -297,10 +298,5 @@ export const useDictionaryStore = create<DictionaryState>()(
   partialize: (state) => ({
     targetLanguages: state.targetLanguages,
   }),
-  onRehydrateStorage: () => (state) => {
-    if (state) {
-      state.initLanguages();
-    }
-  },
 }
 ));
