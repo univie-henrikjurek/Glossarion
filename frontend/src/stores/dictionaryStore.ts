@@ -295,8 +295,6 @@ export const useDictionaryStore = create<DictionaryState>()(
 }),
 {
   name: 'glossarion-store',
-  partialize: (state) => ({
-    targetLanguages: state.targetLanguages,
-  }),
+  partialize: () => ({}), // Don't persist anything - always use defaults from code
 }
 ));
