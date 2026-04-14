@@ -645,9 +645,25 @@ export default function DictionaryTable() {
                       const date = new Date(entry.created_at);
                       const today = new Date();
                       const diffDays = Math.floor((today.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-                      let dateStr: string;
-                      if (diffDays === 0) dateStr = 'Today';
-                      else if (diffDays === 1) dateStr = 'Yesterday';
+                      let dateStr = '';
+                      if (diffDays === 0) {
+                        const time = date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+                        return (
+                          <div className="text-xs text-slate-500">
+                            <div>Today</div>
+                            <div className="opacity-70">{time}</div>
+                          </div>
+                        );
+                      }
+                      else if (diffDays === 1) {
+                        const time = date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+                        return (
+                          <div className="text-xs text-slate-500">
+                            <div>Yesterday</div>
+                            <div className="opacity-70">{time}</div>
+                          </div>
+                        );
+                      }
                       else if (diffDays < 7) dateStr = `${diffDays}d ago`;
                       else dateStr = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
                       return <span className="text-xs text-slate-500">{dateStr}</span>;
