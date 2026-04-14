@@ -6,9 +6,9 @@ services:
     env_file:
       - .env
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER:-glossarion}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-glossarion_dev_2024}
+      POSTGRES_DB: ${POSTGRES_DB:-glossarion}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -29,11 +29,11 @@ services:
     env_file:
       - .env
     environment:
-      DATABASE_URL: ${DATABASE_URL}
-      LIBRETRANSLATE_URL: ${LIBRETRANSLATE_URL}
-      CORS_ORIGINS: ${CORS_ORIGINS}
-      SOURCE_LANGUAGE: ${SOURCE_LANGUAGE}
-      TARGET_LANGUAGES: ${USED_LANGUAGES}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://glossarion:glossarion_dev_2024@db:5432/glossarion}
+      LIBRETRANSLATE_URL: ${LIBRETRANSLATE_URL:-http://libretranslate:5000}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost,http://localhost:80,http://localhost:5173,http://192.168.0.158}
+      SOURCE_LANGUAGE: ${SOURCE_LANGUAGE:-en}
+      TARGET_LANGUAGES: ${USED_LANGUAGES:-en,de,fr,es,it,pt,nl,pl,ru}
     depends_on:
       db:
         condition: service_healthy
@@ -50,7 +50,7 @@ services:
       REDIS_URL: redis://redis:6379
       LIMIT_FILE_SIZE: true
       REQUIRE_API_KEY: false
-      LT_LOAD_ONLY: ${USED_LANGUAGES}
+      LT_LOAD_ONLY: ${USED_LANGUAGES:-en,de,fr,es,it,pt,nl,pl,ru}
     depends_on:
       - redis
     networks:
