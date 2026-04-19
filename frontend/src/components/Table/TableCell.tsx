@@ -149,7 +149,7 @@ export default function TableCell({ entryId, translation, languageCode, isSource
           className="absolute bottom-1 right-1 text-slate-400 hover:text-white transition-colors"
           title="Search sign language video"
         >
-          <span className="text-lg">📺</span>
+          <span className="text-lg">👐</span>
         </button>
       )}
     </div>
