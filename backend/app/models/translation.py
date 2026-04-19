@@ -17,6 +17,7 @@ class Translation(Base):
     gender = Column(String(10), nullable=True)
     article = Column(String(20), nullable=True)
     grammar_details = Column(JSON, nullable=True)
+    sign_language_url = Column(String(200), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     

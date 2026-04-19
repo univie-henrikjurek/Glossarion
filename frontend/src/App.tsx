@@ -1,13 +1,16 @@
 import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { useDictionaryStore } from './stores/dictionaryStore';
+import { useAppStore } from './stores/appStore';
 import Header from './components/Layout/Header';
 import DictionaryTable from './components/Table/DictionaryTable';
 import EntryModal from './components/Entry/EntryModal';
 import WordDetailsPanel from './components/WordDetails/WordDetailsPanel';
+import SignLanguageModal from './components/SignLanguage/SignLanguageModal';
 
 function AppContent() {
   const { fetchDictionaries, isLoading, error, clearError, currentDictionary } = useDictionaryStore();
+  const { showSignLanguageModal, signLanguageTranslation, closeSignLanguageModal } = useAppStore();
 
   useEffect(() => {
     fetchDictionaries();
@@ -54,6 +57,11 @@ function AppContent() {
       
       <EntryModal />
       <WordDetailsPanel />
+      <SignLanguageModal
+        isOpen={showSignLanguageModal}
+        onClose={closeSignLanguageModal}
+        translation={signLanguageTranslation}
+      />
     </div>
   );
 }

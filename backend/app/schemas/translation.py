@@ -16,6 +16,7 @@ class TranslationUpdate(BaseModel):
     gender: Optional[str] = None
     article: Optional[str] = None
     grammar_details: Optional[Any] = None
+    sign_language_url: Optional[str] = None
 
 
 class TranslationResponse(BaseModel):
@@ -28,6 +29,7 @@ class TranslationResponse(BaseModel):
     gender: Optional[str] = None
     article: Optional[str] = None
     grammar_details: Optional[Any] = None
+    sign_language_url: Optional[str] = None
     created_at: datetime
     updated_at: datetime
     

@@ -8,6 +8,7 @@ export interface Translation {
   gender?: string;
   article?: string;
   grammar_details?: Record<string, string>;
+  sign_language_url?: string;
   created_at: string;
   updated_at: string;
 }

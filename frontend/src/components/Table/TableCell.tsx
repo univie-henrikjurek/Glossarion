@@ -50,7 +50,7 @@ export default function TableCell({ entryId, translation, languageCode, isSource
   const [value, setValue] = useState(translation?.text || '');
   const inputRef = useRef<HTMLInputElement>(null);
   const { addTranslation, updateTranslation } = useDictionaryStore();
-  const { grammarMode, openWordDetails } = useAppStore();
+  const { grammarMode, openWordDetails, openSignLanguageModal } = useAppStore();
 
   useEffect(() => {
     setValue(translation?.text || '');
@@ -141,6 +141,15 @@ export default function TableCell({ entryId, translation, languageCode, isSource
           className="absolute top-1 right-1"
         >
           <TranslationStatus status={translation.status} compact />
+        </button>
+      )}
+      {translation && (
+        <button
+          onClick={() => openSignLanguageModal(translation)}
+          className="absolute bottom-1 right-1 text-slate-400 hover:text-white transition-colors"
+          title="Search sign language video"
+        >
+          <span className="text-lg">📺</span>
         </button>
       )}
     </div>

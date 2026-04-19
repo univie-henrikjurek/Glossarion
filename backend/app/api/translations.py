@@ -33,6 +33,8 @@ async def update_translation(
         translation.gender = data.gender if data.gender != '' else None
     if data.article is not None:
         translation.article = data.article if data.article != '' else None
+    if data.sign_language_url is not None:
+        translation.sign_language_url = data.sign_language_url if data.sign_language_url != '' else None
     
     translation.updated_at = datetime.utcnow()
     await db.commit()
