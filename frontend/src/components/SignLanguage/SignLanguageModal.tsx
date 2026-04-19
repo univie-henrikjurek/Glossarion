@@ -59,47 +59,13 @@ export default function SignLanguageModal({ isOpen, onClose, translation }: Sign
     setIsLoading(true);
     try {
       const response = await fetch(
-        `https://www.youtube.com/results?search_query=${encodeURIComponent(searchQuery)}`,
-        { credentials: 'include' }
+        `/api/youtube/search?q=${encodeURIComponent(searchQuery)}`
       );
-      const html = await response.text();
+      const data = await response.json();
       
-      const videoIds: YouTubeVideo[] = [];
-      const idRegex = /"videoId":"([a-zA-Z0-9_-]{11})"/g;
-      const titleRegex = /"title":{"runs":\[{"text":"([^"]+)"}/g;
-      const channelRegex = /"longBylineText":{"simpleText":"([^"]+)"}/g;
-      
-      let idMatch;
-      const ids: string[] = [];
-      while ((idMatch = idRegex.exec(html)) && ids.length < 6) {
-        if (!ids.includes(idMatch[1])) {
-          ids.push(idMatch[1]);
-        }
+      if (data.videos) {
+        setVideos(data.videos);
       }
-      
-      let titleMatch;
-      const titles: string[] = [];
-      const titleHtml = html.replace(/\\u0026/g, '&');
-      while ((titleMatch = titleRegex.exec(titleHtml)) && titles.length < 6) {
-        titles.push(titleMatch[1]);
-      }
-      
-      let channelMatch;
-      const channels: string[] = [];
-      while ((channelMatch = channelRegex.exec(titleHtml)) && channels.length < 6) {
-        channels.push(channelMatch[1]);
-      }
-      
-      for (let i = 0; i < Math.min(ids.length, 6); i++) {
-        videoIds.push({
-          id: ids[i],
-          title: titles[i] || `Video ${i + 1}`,
-          thumbnail: `https://img.youtube.com/vi/${ids[i]}/hqdefault.jpg`,
-          channel: channels[i] || ''
-        });
-      }
-      
-      setVideos(videoIds);
     } catch (error) {
       console.error('YouTube search failed:', error);
     } finally {

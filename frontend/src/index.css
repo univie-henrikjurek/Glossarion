@@ -37,3 +37,9 @@ body {
 .animate-spin {
   animation: spin 1s linear infinite;
 }
+
+.search-highlight {
+  background-color: rgba(168, 85, 247, 0.3);
+  box-shadow: 0 0 8px rgba(168, 85, 247, 0.6);
+  border-radius: 4px;
+}

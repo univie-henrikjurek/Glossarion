@@ -6,7 +6,7 @@ from sqlalchemy.orm import selectinload
 
 from app.database import init_db, AsyncSessionLocal, engine
 from app.models import Entry
-from app.api import entries_router, translations_router, auth_router, dictionaries_router
+from app.api import entries_router, translations_router, auth_router, dictionaries_router, youtube_router
 from app.config import get_settings
 from app.services import TranslatorService
 
@@ -30,6 +30,9 @@ async def run_migrations():
                 END IF;
                 IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'translations' AND column_name = 'grammar_details') THEN
                     ALTER TABLE translations ADD COLUMN grammar_details JSON;
+                END IF;
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'translations' AND column_name = 'sign_language_url') THEN
+                    ALTER TABLE translations ADD COLUMN sign_language_url VARCHAR(200);
                 END IF;
                 
                 -- Users table
@@ -133,6 +136,7 @@ app.include_router(entries_router)
 app.include_router(translations_router)
 app.include_router(auth_router)
 app.include_router(dictionaries_router)
+app.include_router(youtube_router)
 
 
 @app.get("/health")
