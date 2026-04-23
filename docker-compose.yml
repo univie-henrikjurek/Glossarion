@@ -37,7 +37,6 @@ services:
 
   libretranslate:
     image: libretranslate/libretranslate:latest
-    platform: linux/arm64
     container_name: glossarion_libretranslate
     restart: unless-stopped
     environment:
