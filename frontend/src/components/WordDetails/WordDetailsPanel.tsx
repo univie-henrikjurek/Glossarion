@@ -21,6 +21,8 @@ export default function WordDetailsPanel() {
   const [newTag, setNewTag] = useState('');
   const [context, setContext] = useState('');
   const [editingGrammar, setEditingGrammar] = useState(false);
+  const [editingWord, setEditingWord] = useState(false);
+  const [editWordText, setEditWordText] = useState('');
   const [editWordType, setEditWordType] = useState('');
   const [editGender, setEditGender] = useState('');
   const [editArticle, setEditArticle] = useState('');
@@ -47,6 +49,12 @@ export default function WordDetailsPanel() {
       fetchWiktionaryData(wordDetails.translation.text, wordDetails.language);
     }
   }, [wordDetails?.translation?.text, wordDetails?.language]);
+
+  useEffect(() => {
+    if (wordDetails?.translation) {
+      setEditWordText(wordDetails.translation.text);
+    }
+  }, [wordDetails?.translation?.id]);
 
   const fetchWiktionaryData = async (word: string, lang: string) => {
     setLoading(true);
@@ -175,6 +183,13 @@ export default function WordDetailsPanel() {
     }
   };
 
+  const handleSaveWord = async () => {
+    if (wordDetails?.translation && editWordText.trim()) {
+      await updateTranslation(wordDetails.translation.id, { text: editWordText.trim() });
+      setEditingWord(false);
+    }
+  };
+
   const handleAddTag = () => {
     if (newTag.trim() && wordDetails?.entry) {
       const updatedTags = [...tags, newTag.trim()];
@@ -233,16 +248,46 @@ export default function WordDetailsPanel() {
           {translation && (
             <>
               <section>
-                <h3 className="text-sm font-medium text-slate-300 mb-3 flex items-center gap-2">
-                  <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  Translation
-                </h3>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-medium text-slate-300 flex items-center gap-2">
+                    <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Translation
+                  </h3>
+                  <button
+                    onClick={() => {
+                      if (editingWord) {
+                        handleSaveWord();
+                      } else {
+                        setEditWordText(translation?.text || '');
+                        setEditingWord(true);
+                      }
+                    }}
+                    className="text-xs text-purple-400 hover:text-purple-300"
+                  >
+                    {editingWord ? 'Save' : 'Edit'}
+                  </button>
+                </div>
                 <div className="bg-slate-700/50 rounded-lg p-3">
-                  <ReactMarkdown className="text-white prose prose-sm prose-invert max-w-none">
-                    {translation.text}
-                  </ReactMarkdown>
+                  {editingWord ? (
+                    <input
+                      type="text"
+                      value={editWordText}
+                      onChange={(e) => setEditWordText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleSaveWord();
+                        if (e.key === 'Escape') setEditingWord(false);
+                      }}
+                      onBlur={handleSaveWord}
+                      className="w-full px-2 py-1 bg-slate-600 border border-purple-500 rounded text-white focus:outline-none"
+                      autoFocus
+                    />
+                  ) : (
+                    <ReactMarkdown className="text-white prose prose-sm prose-invert max-w-none">
+                      {translation.text}
+                    </ReactMarkdown>
+                  )}
                 </div>
               </section>
 
